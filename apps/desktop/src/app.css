@@ -8,30 +8,36 @@
   /* Card dimensions */
   --card-w: 620px;
   --card-h: 760px;
-  --radius: 14px;
+  --radius: 16px;
 
-  /* Colors - Dark theme (Runebound Blackglass) */
-  --bg: #0c0d10;
-  --fg: #e8eaf0;
-  --muted: #9aa3b2;
-  --accent-1: #bfa76a;
-  --accent-2: #6ea2ff;
-  --danger: #a44242;
+  /* Zen Serenity Theme - Nature-Inspired Colors */
+  --bg: #f5f5dc;              /* Beige - soft canvas background */
+  --fg: #2d3e2d;              /* Deep forest green - main text */
+  --muted: #6b7a6b;           /* Sage gray - secondary text */
+  --accent-1: #daa520;        /* Goldenrod - primary accent */
+  --accent-2: #228b22;        /* Forest green - secondary accent */
+  --danger: #a0522d;          /* Sienna - warm error color */
 
-  /* Grade button colors */
-  --g-again: #8c2e2e;
-  --g-hard: #c19a33;
-  --g-good: #2f7d3e;
-  --g-easy: #256e9d;
+  /* Nature element colors */
+  --zen-water: #87ceeb;       /* Sky blue - water elements */
+  --zen-earth: #d2b48c;       /* Tan - earth tones */
+  --zen-bamboo: #6b8e23;      /* Olive drab - bamboo */
+  --zen-spring: #90ee90;      /* Light green - spring/growth */
+
+  /* Grade button colors - Nature themed */
+  --g-again: #8b4513;         /* Saddle brown - rocky/difficult */
+  --g-hard: #daa520;          /* Goldenrod - sunset/challenging */
+  --g-good: #228b22;          /* Forest green - growth/success */
+  --g-easy: #87ceeb;          /* Sky blue - clarity/mastery */
 
   /* Card UI */
-  --card-bg: rgba(18, 20, 26, 0.95);
-  --card-border: rgba(191, 167, 106, 0.3);
-  --card-glow: rgba(191, 167, 106, 0.15);
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(218, 165, 32, 0.35);
+  --card-glow: rgba(34, 139, 34, 0.12);
 
-  /* Shadows */
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--card-border);
+  /* Shadows - Soft green-tinted */
+  --shadow-lg: 0 12px 32px rgba(34, 139, 34, 0.15);
+  --shadow-card: 0 6px 24px rgba(34, 139, 34, 0.12), 0 0 0 1px var(--card-border);
 
   /* Typography */
   --font-display: 'Cinzel', serif;
@@ -39,13 +45,26 @@
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-:root[data-theme='light'] {
-  --bg: #f5f7fa;
-  --fg: #1a1d24;
-  --muted: #5c6370;
-  --card-bg: rgba(255, 255, 255, 0.98);
-  --card-border: rgba(191, 167, 106, 0.4);
-  --card-glow: rgba(191, 167, 106, 0.2);
+/* Classic dark theme fallback - can be toggled in settings */
+:root[data-theme='dark'] {
+  --bg: #0c0d10;
+  --fg: #e8eaf0;
+  --muted: #9aa3b2;
+  --accent-1: #bfa76a;
+  --accent-2: #6ea2ff;
+  --danger: #a44242;
+
+  --g-again: #8c2e2e;
+  --g-hard: #c19a33;
+  --g-good: #2f7d3e;
+  --g-easy: #256e9d;
+
+  --card-bg: rgba(18, 20, 26, 0.95);
+  --card-border: rgba(191, 167, 106, 0.3);
+  --card-glow: rgba(191, 167, 106, 0.15);
+
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--card-border);
 }
 
 * {
@@ -60,6 +79,26 @@ body {
   color: var(--fg);
   min-height: 100vh;
   overflow-x: hidden;
+  /* Subtle paper texture for zen aesthetic */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(107, 122, 107, 0.02) 2px,
+      rgba(107, 122, 107, 0.02) 4px
+    );
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 #svelte {
