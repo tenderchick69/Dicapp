@@ -63,15 +63,6 @@ export const POST: RequestHandler = async ({ request }) => {
     const timestamp = Date.now();
     const filename = file.name;
 
-    // Sanity check: verify bucket exists
-    const { data: bucketInfo } = await supabase.storage.getBucket(UPLOAD_BUCKET);
-    if (!bucketInfo) {
-      return json(
-        { ok: false, code: 400, message: `Bucket not found: ${UPLOAD_BUCKET} (project=${PUBLIC_SUPABASE_URL})` },
-        { status: 400 }
-      );
-    }
-
     // Upload to storage
     const storagePath = `${user.id}/ingests/${timestamp}-${filename}`;
     const { error: uploadError } = await supabase.storage
@@ -141,16 +132,23 @@ export const POST: RequestHandler = async ({ request }) => {
       );
     }
 
-    // Prepare words for bulk insert (only columns that exist in DB schema)
+    // Prepare words for bulk insert (with full schema support)
     const wordsToInsert = parseResult.words.map((word) => ({
       id: word.id,
       user_id: user.id,
       deck_id: word.deck_id,
       headword: word.headword,
       pos: word.pos || null,
+      ipa: word.ipa || null,
       definition: word.definition || null,
-      tags: word.tags && word.tags.length > 0 ? word.tags : [],
+      example: word.example || null,
+      gloss_de: word.gloss_de || null,
+      etymology: word.etymology || null,
+      mnemonic: word.mnemonic || null,
+      tags: word.tags && word.tags.length > 0 ? word.tags.join(';') : '', // Semicolon-delimited string
+      freq: word.freq || 3.0,
       created_at: new Date(word.created_at).toISOString(),
+      updated_at: new Date(word.updated_at).toISOString(),
     }));
 
     // Bulk insert words
