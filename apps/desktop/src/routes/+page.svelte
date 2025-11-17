@@ -7,6 +7,7 @@
   import { authStore } from '$lib/stores/auth';
   import Header from '$lib/components/Header.svelte';
   import { Compass, LogIn } from 'lucide-svelte';
+  import { Seedling, WaterDrop, Bamboo, WiltedLeaf } from '$lib/components/icons';
 
   let stats = {
     total: 0,
@@ -130,21 +131,33 @@
         </p>
       </div>
     {:else}
-      <!-- Stats -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-card-bg border rounded-lg p-4 text-center" style="border-color: var(--card-border)">
+      <!-- Stats - Zen Nature Icons -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 zen-stats">
+        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 0ms">
+          <div class="flex justify-center mb-2">
+            <Seedling size={32} animate={true} />
+          </div>
           <div class="text-3xl font-bold mb-1" style="color: var(--accent-1)">{stats.new}</div>
           <div class="text-sm" style="color: var(--muted)">New</div>
         </div>
-        <div class="bg-card-bg border rounded-lg p-4 text-center" style="border-color: var(--card-border)">
+        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 100ms">
+          <div class="flex justify-center mb-2">
+            <WaterDrop size={28} animate={true} />
+          </div>
           <div class="text-3xl font-bold mb-1" style="color: var(--accent-2)">{stats.learning}</div>
           <div class="text-sm" style="color: var(--muted)">Learning</div>
         </div>
-        <div class="bg-card-bg border rounded-lg p-4 text-center" style="border-color: var(--card-border)">
+        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 200ms">
+          <div class="flex justify-center mb-2">
+            <Bamboo width={20} height={32} animate={true} />
+          </div>
           <div class="text-3xl font-bold mb-1" style="color: var(--g-good)">{stats.retention}</div>
           <div class="text-sm" style="color: var(--muted)">Retention</div>
         </div>
-        <div class="bg-card-bg border rounded-lg p-4 text-center" style="border-color: var(--card-border)">
+        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 300ms">
+          <div class="flex justify-center mb-2">
+            <WiltedLeaf size={28} animate={true} />
+          </div>
           <div class="text-3xl font-bold mb-1" style="color: var(--danger)">{stats.leeches}</div>
           <div class="text-sm" style="color: var(--muted)">Leeches</div>
         </div>
@@ -170,3 +183,45 @@
     {/if}
   </div>
 </div>
+
+<style>
+  /* Zen Stats - Staggered Entrance Animation */
+  .stat-card {
+    background: var(--card-bg);
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: stat-appear 0.6s ease-out backwards;
+    animation-delay: var(--stat-delay);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 8px 24px rgba(34, 139, 34, 0.15);
+    border-color: var(--accent-1);
+  }
+
+  @keyframes stat-appear {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Respect user motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .stat-card {
+      animation: none;
+    }
+
+    .stat-card:hover {
+      transform: none;
+    }
+  }
+</style>
