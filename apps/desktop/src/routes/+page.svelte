@@ -61,6 +61,14 @@
     goto('/study');
   }
 
+  function startPractice(mode: 'new' | 'learning' | 'all') {
+    if (!$deckStore.currentDeckId) {
+      alert('Create a deck first to start studying.');
+      return;
+    }
+    goto(`/study?mode=practice&filter=${mode}`);
+  }
+
   function goToExplore() {
     goto('/explore');
   }
@@ -186,8 +194,9 @@
         </div>
       </div>
 
-      <!-- Action Button -->
-      <div class="space-y-6">
+      <!-- Action Buttons -->
+      <div class="space-y-4">
+        <!-- Primary: Review Due Cards (SRS Mode) -->
         <button
           on:click={startReview}
           disabled={stats.due === 0}
@@ -195,11 +204,46 @@
           style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
         >
           {#if stats.due > 0}
-            Start Review ({stats.due} cards)
+            Review Due Cards ({stats.due})
           {:else}
             No Cards Due
           {/if}
         </button>
+
+        <!-- Secondary: Practice Modes -->
+        {#if stats.total > 0}
+          <div class="text-center mb-2 mt-6">
+            <p class="text-sm font-medium" style="color: var(--muted)">Or practice anytime:</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              on:click={() => startPractice('new')}
+              disabled={stats.new === 0}
+              class="py-4 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style="background: var(--card-bg); border: 1.5px solid var(--accent-1); color: var(--accent-1)"
+              title="Practice new cards you haven't seen yet"
+            >
+              Practice New ({stats.new})
+            </button>
+            <button
+              on:click={() => startPractice('learning')}
+              disabled={stats.learning === 0}
+              class="py-4 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style="background: var(--card-bg); border: 1.5px solid var(--accent-2); color: var(--accent-2)"
+              title="Practice cards you're actively learning"
+            >
+              Practice Learning ({stats.learning})
+            </button>
+          </div>
+          <button
+            on:click={() => startPractice('all')}
+            class="w-full py-3 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style="background: var(--card-bg); border: 1.5px solid var(--muted); color: var(--fg)"
+            title="Practice all cards in deck, ignore due dates"
+          >
+            Practice All Cards ({stats.total})
+          </button>
+        {/if}
       </div>
 
       <!-- Total count -->

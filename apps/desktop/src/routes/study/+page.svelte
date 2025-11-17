@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { studyStore, isComplete } from '$lib/stores/study';
   import { getDataStore } from '$lib/stores/database';
   import { deckStore } from '$lib/stores/deck';
@@ -9,7 +10,7 @@
   import { buildQueueByScope } from '@runedeck/core/queue';
   import { gradeCard, modeOf } from '@runedeck/core/scheduler';
   import { uuid } from '@runedeck/core/models';
-  import type { Grade } from '@runedeck/core/models';
+  import type { Grade, ScheduledWord } from '@runedeck/core/models';
   import type { IDataStore } from '@runedeck/data';
   import Card from '$lib/components/Card.svelte';
   import GradeButtons from '$lib/components/GradeButtons.svelte';
@@ -21,6 +22,8 @@
   let keyboardEnabled = true;
   let dataStore: IDataStore | null = null;
   let freeStudyMode = false;
+  let practiceMode: 'new' | 'learning' | 'all' | null = null;
+  let againQueue: ScheduledWord[] = []; // Cards marked "Again" for immediate re-review
 
   onMount(async () => {
     try {
@@ -36,31 +39,51 @@
 
       dataStore = await getDataStore();
 
-      // Build study queue using scope (supports multi-deck)
-      const config = {
-        dueLimit: $settingsStore.dueLimit,
-        newPerDay: $settingsStore.newPerDay,
-        leechThreshold: $settingsStore.leechThreshold,
-      };
+      // Check URL parameters for practice mode
+      const urlParams = $page.url.searchParams;
+      const mode = urlParams.get('mode');
+      const filter = urlParams.get('filter') as 'new' | 'learning' | 'all' | null;
 
-      let { cards } = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, config);
+      let cards: ScheduledWord[] = [];
 
-      // If no cards due, enable free study mode with all cards
-      if (cards.length === 0) {
-        freeStudyMode = true;
-        const freeStudyConfig = {
-          dueLimit: 10000, // Very high limit to get all cards
-          newPerDay: 10000,
+      if (mode === 'practice' && filter) {
+        // PRACTICE MODE - ignore due dates, study cards based on filter
+        practiceMode = filter;
+        cards = await buildPracticeQueue(dataStore, currentDeckId, filter);
+
+        if (cards.length === 0) {
+          error = `No ${filter} cards found in this deck.`;
+          loading = false;
+          return;
+        }
+      } else {
+        // NORMAL SRS MODE - only due cards
+        const config = {
+          dueLimit: $settingsStore.dueLimit,
+          newPerDay: $settingsStore.newPerDay,
           leechThreshold: $settingsStore.leechThreshold,
         };
 
-        const result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, freeStudyConfig);
+        let result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, config);
         cards = result.cards;
 
+        // If no cards due, enable free study mode with all cards
         if (cards.length === 0) {
-          error = 'No cards in this deck. Add some words to get started!';
-          loading = false;
-          return;
+          freeStudyMode = true;
+          const freeStudyConfig = {
+            dueLimit: 10000,
+            newPerDay: 10000,
+            leechThreshold: $settingsStore.leechThreshold,
+          };
+
+          result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, freeStudyConfig);
+          cards = result.cards;
+
+          if (cards.length === 0) {
+            error = 'No cards in this deck. Add some words to get started!';
+            loading = false;
+            return;
+          }
         }
       }
 
@@ -74,6 +97,26 @@
       loading = false;
     }
   });
+
+  // Build practice queue - gets cards ignoring due dates
+  async function buildPracticeQueue(store: IDataStore, deckId: string, filter: 'new' | 'learning' | 'all'): Promise<ScheduledWord[]> {
+    if (filter === 'new') {
+      // New cards only
+      return await store.getNewByScope($scopeStore, deckId, 10000);
+    } else if (filter === 'learning') {
+      // Learning cards: interval > 0 AND interval < 21
+      // Get all cards with high limit, then filter client-side
+      const allCards = await store.getDueByScope($scopeStore, deckId, 10000);
+      return allCards.filter(card => card.scheduling.interval > 0 && card.scheduling.interval < 21);
+    } else {
+      // All cards - get both due and new, with very high limits
+      const [due, fresh] = await Promise.all([
+        store.getDueByScope($scopeStore, deckId, 10000),
+        store.getNewByScope($scopeStore, deckId, 10000),
+      ]);
+      return [...due, ...fresh];
+    }
+  }
 
   onDestroy(() => {
     window.removeEventListener('keydown', handleKeyboard);
@@ -132,8 +175,27 @@
         elapsed_ms: elapsed,
       });
 
+      // CRITICAL: If user pressed "Again" (grade = 1), re-add card to end of session
+      // This ensures you can review it again in the SAME session (like Anki's learning steps)
+      if (grade === 1) {
+        // Create a copy of the card with updated scheduling
+        const cardForReview: ScheduledWord = {
+          ...card,
+          scheduling: newScheduling,
+        };
+
+        // Add to againQueue - will be shown at end of session
+        againQueue.push(cardForReview);
+      }
+
       // Move to next card
       studyStore.nextCard();
+
+      // If main queue is empty but we have "Again" cards, add them back
+      if (state.session.queue.length === 0 && againQueue.length > 0) {
+        studyStore.addCards(againQueue);
+        againQueue = []; // Clear the again queue
+      }
     } catch (err: any) {
       console.error('Failed to grade card:', err);
       error = err.message;
@@ -156,13 +218,21 @@
 <Header />
 
 <div class="min-h-screen flex flex-col">
-  <!-- Free Study Mode Banner -->
-  {#if freeStudyMode && !loading && !error}
-    <div class="px-6 py-3 text-center" style="background: var(--accent-2); color: var(--bg)">
-      <p class="text-sm font-medium">
-        Free Study Mode - No cards due, reviewing all deck cards
-      </p>
-    </div>
+  <!-- Practice / Free Study Mode Banner -->
+  {#if !loading && !error}
+    {#if practiceMode}
+      <div class="px-6 py-3 text-center" style="background: var(--accent-2); color: var(--bg)">
+        <p class="text-sm font-medium">
+          Practice Mode - {practiceMode === 'new' ? 'New Cards' : practiceMode === 'learning' ? 'Learning Cards' : 'All Cards'} (due dates ignored)
+        </p>
+      </div>
+    {:else if freeStudyMode}
+      <div class="px-6 py-3 text-center" style="background: var(--accent-2); color: var(--bg)">
+        <p class="text-sm font-medium">
+          Free Study Mode - No cards due, reviewing all deck cards
+        </p>
+      </div>
+    {/if}
   {/if}
 
   <!-- Progress Header -->
