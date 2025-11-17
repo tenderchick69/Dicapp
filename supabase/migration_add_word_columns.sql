@@ -4,6 +4,15 @@
 -- This adds: ipa, example, gloss_de, etymology, mnemonic, freq, updated_at
 -- to the words table if they don't already exist
 
+-- First, ensure the touch_updated_at function exists
+CREATE OR REPLACE FUNCTION public.touch_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  new.updated_at := now();
+  RETURN new;
+END;
+$$;
+
 -- Add ipa column if missing
 DO $$
 BEGIN
@@ -64,8 +73,13 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                    WHERE table_name='words' AND column_name='updated_at') THEN
         ALTER TABLE public.words ADD COLUMN updated_at timestamptz not null default now();
+    END IF;
+END $$;
 
-        -- Add trigger to auto-update timestamp
+-- Add trigger for updated_at if missing
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'words_touch_updated_at') THEN
         CREATE TRIGGER words_touch_updated_at
         BEFORE UPDATE ON public.words
         FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
