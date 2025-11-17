@@ -36,27 +36,23 @@
 </script>
 
 <div
-  class="card-frame zen-card"
+  class="card-frame"
   style="
     width: var(--card-w);
     max-width: 95vw;
     height: var(--card-h);
     max-height: 85vh;
     background: var(--card-bg);
-    border-radius: 45% 55% 42% 58% / 48% 52% 48% 52%;
+    border-radius: var(--radius);
     box-shadow: var(--shadow-card);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     position: relative;
-    backdrop-filter: blur(8px);
   "
 >
-  <!-- Water ripple effect on reveal -->
-  <div class="water-ripple"></div>
-
-  <!-- Decorative leaf corner -->
-  <div class="leaf-decoration"></div>
+  <!-- Foil sweep effect on hover -->
+  <div class="foil-sweep"></div>
 
   <!-- Header: Show headword only for word-to-def orientation -->
   {#if orientation === 'word-to-def'}
@@ -195,87 +191,43 @@
 </div>
 
 <style>
-  /* Zen Card - Floating Leaf Effect */
-  .zen-card {
-    animation: float 6s ease-in-out infinite;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  .card-frame {
+    transition: transform 0.2s ease;
   }
 
-  .zen-card:hover {
-    transform: translateY(-6px) scale(1.01);
-    box-shadow: 0 12px 48px rgba(34, 139, 34, 0.2), 0 0 0 1px var(--card-border);
+  .card-frame:hover {
+    transform: translateY(-4px);
   }
 
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px) rotate(0deg);
-    }
-    33% {
-      transform: translateY(-4px) rotate(0.3deg);
-    }
-    66% {
-      transform: translateY(2px) rotate(-0.3deg);
-    }
-  }
-
-  /* Water Ripple Effect */
-  .water-ripple {
+  .foil-sweep {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(
-      circle at center,
-      rgba(135, 206, 235, 0.15) 0%,
-      rgba(144, 238, 144, 0.1) 30%,
-      transparent 70%
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      transparent 40%,
+      rgba(191, 167, 106, 0.15) 50%,
+      transparent 60%,
+      transparent 100%
     );
     opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.3s ease;
   }
 
-  /* Water ripple appears on reveal */
-  [data-revealed="true"] .water-ripple {
+  /* Foil sweep only on reveal, not infinite */
+  [data-revealed="true"] .foil-sweep {
     opacity: 1;
-    animation: ripple-expand 1.2s ease-out forwards;
+    animation: sweep 0.8s ease-out forwards;
   }
 
-  @keyframes ripple-expand {
-    0% {
-      transform: scale(0.8);
+  @keyframes sweep {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
       opacity: 0;
-    }
-    50% {
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1.3);
-      opacity: 0;
-    }
-  }
-
-  /* Decorative Leaf Corner */
-  .leaf-decoration {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 24px;
-    height: 24px;
-    opacity: 0.2;
-    pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23228B22'%3E%3Cpath d='M12 2C12 2 8 6 8 12C8 16 10 18 12 22C14 18 16 16 16 12C16 6 12 2 12 2Z' opacity='0.8'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    animation: leaf-gentle-sway 3s ease-in-out infinite;
-  }
-
-  @keyframes leaf-gentle-sway {
-    0%,
-    100% {
-      transform: rotate(-2deg);
-    }
-    50% {
-      transform: rotate(2deg);
     }
   }
 
@@ -313,21 +265,5 @@
   .card-body::-webkit-scrollbar-thumb {
     background: var(--card-border);
     border-radius: 3px;
-  }
-
-  /* Respect user motion preferences */
-  @media (prefers-reduced-motion: reduce) {
-    .zen-card {
-      animation: none !important;
-    }
-
-    .water-ripple,
-    .leaf-decoration {
-      animation: none !important;
-    }
-
-    .zen-card:hover {
-      transform: none;
-    }
   }
 </style>

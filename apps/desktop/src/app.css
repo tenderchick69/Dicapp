@@ -2,7 +2,7 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
   /* Card dimensions */
@@ -39,16 +39,10 @@
   --shadow-lg: 0 12px 32px rgba(34, 139, 34, 0.15);
   --shadow-card: 0 6px 24px rgba(34, 139, 34, 0.12), 0 0 0 1px var(--card-border);
 
-  /* Typography - Zen Serenity */
-  --font-display: 'Lora', serif;
+  /* Typography */
+  --font-display: 'Cinzel', serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Font weights */
-  --fw-light: 300;
-  --fw-normal: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
 }
 
 /* Classic dark theme fallback - can be toggled in settings */
@@ -81,12 +75,10 @@ body {
   margin: 0;
   padding: 0;
   font-family: var(--font-body);
-  font-weight: var(--fw-normal);
   background: var(--bg);
   color: var(--fg);
   min-height: 100vh;
   overflow-x: hidden;
-  letter-spacing: 0.01em; /* Slight breathing room */
   /* Subtle paper texture for zen aesthetic */
   background-image:
     repeating-linear-gradient(
@@ -96,17 +88,6 @@ body {
       rgba(107, 122, 107, 0.02) 2px,
       rgba(107, 122, 107, 0.02) 4px
     );
-}
-
-/* Zen typography adjustments */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.02em;
-}
-
-p {
-  line-height: 1.7; /* More spacious for readability */
 }
 
 /* Respect user motion preferences */
