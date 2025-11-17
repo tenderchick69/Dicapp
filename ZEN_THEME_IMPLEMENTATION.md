@@ -173,3 +173,110 @@ If Zen theme causes issues:
 4. **Phase 8:** Production release with theme toggle
 
 **Current Status:** Phase 1 ready for deployment ✅
+
+---
+
+## Phase 2: Typography ✅
+
+**Completed:** 2025-01-18
+
+### Changes Made
+1. **Font Updates:**
+   - Display font: Cinzel → **Lora** (softer, more zen serif)
+   - Weights: 300, 400, 500, 600 (lighter overall)
+   - Imported via Google Fonts
+
+2. **CSS Improvements:**
+   - Global letter-spacing: `0.01em` (breathing room)
+   - Headings letter-spacing: `0.02em`
+   - Paragraph line-height: `1.7` (better readability)
+   - Added CSS variables for font weights (`--fw-light`, `--fw-normal`, etc.)
+
+3. **Tailwind Config:**
+   - Updated to use Lora as display font
+
+**Result:** Text feels calmer, more spacious, and easier to read with zen aesthetic.
+
+---
+
+## Phase 3: Card Component Redesign ✅
+
+**Completed:** 2025-01-18
+
+### Changes Made
+1. **Organic Shape:**
+   - Border-radius: `45% 55% 42% 58% / 48% 52% 48% 52%` (leaf-like, asymmetric)
+   - Backdrop filter: `blur(8px)` for depth
+   - Softer shadows with green tint
+
+2. **Floating Animation:**
+   - 6-second gentle vertical bounce (`float` keyframes)
+   - Slight rotation (0.3deg) for organic motion
+   - Hover: Lifts higher + subtle scale
+
+3. **Water Ripple Effect:**
+   - Replaces old foil sweep
+   - Radial gradient with sky blue/light green
+   - Appears on card reveal, expands and fades
+   - 1.2s duration
+
+4. **Decorative Elements:**
+   - Small leaf icon in top-right corner (inline SVG)
+   - Gentle sway animation (3s cycle)
+   - Low opacity (0.2) for subtlety
+
+5. **Accessibility:**
+   - All animations respect `prefers-reduced-motion`
+   - Smooth transitions for better performance
+
+**Result:** Cards feel like floating leaves on water - organic, calming, zen.
+
+---
+
+## Icon Library Created ✅
+
+**Completed:** 2025-01-18
+
+### Files Created
+Created 10 SVG icon components in `/lib/components/icons/`:
+1. **Leaf.svelte** - Sway animation, for navigation
+2. **Lotus.svelte** - Bloom animation, for achievements
+3. **Bamboo.svelte** - Breeze animation, for stats/borders
+4. **WaterDrop.svelte** - Ripple effect, for learning
+5. **EnsoCircle.svelte** - Progress ring, for study progress
+6. **Stone.svelte** - Zen rock, for retention stats
+7. **KoiFish.svelte** - Swim animation, for exploration
+8. **Branch.svelte** - Growth animation, for progress vines
+9. **Seedling.svelte** - Sprout animation, for new cards
+10. **WiltedLeaf.svelte** - Droop animation, for leeches
+
+All icons:
+- Support `animate` prop for optional motion
+- Include `prefers-reduced-motion` support
+- Use nature color palette
+- Export via `index.ts` for easy import
+
+**Next:** Integrate icons into stats cards (Phase 4)
+
+---
+
+## Next Steps
+
+**Immediate Testing Needed:**
+- [ ] Test card readability on beige background
+- [ ] Verify Lora font loads correctly
+- [ ] Check floating animation performance (60fps target)
+- [ ] Test on mobile devices (reduce animation complexity if needed)
+- [ ] Verify all pages still readable
+
+**Future Phases:**
+- Phase 4: Progress & Stats Visualization (integrate icon library)
+- Phase 5: Background Animations (falling leaves, ambient motion)
+- Phase 6: Interaction Animations (button ripples, reveal effects)
+- Phase 7: Full icon integration across app
+- Phase 8: Polish & Performance optimization
+
+**Backend Task (Separate):**
+- Explore page needs RLS policies for public deck sharing
+- Add `is_public` boolean column to `decks` table
+- Implement filtering and cloning for public decks
