@@ -723,7 +723,7 @@ export class CloudStore implements IDataStore {
       gloss_de: row.gloss_de || '',
       etymology: row.etymology || '',
       mnemonic: row.mnemonic || '',
-      tags: row.tags ? row.tags.split(';').filter((t: string) => t.length > 0) : [],
+      tags: Array.isArray(row.tags) ? row.tags : [], // PostgreSQL array, not semicolon-delimited
       freq: row.freq || 3.0,
       created_at: new Date(row.created_at).getTime(),
       updated_at: new Date(row.updated_at).getTime(),
