@@ -33,6 +33,9 @@
   function selectDeck(deckId: string) {
     deckStore.setCurrent(deckId);
     scopeStore.setCurrent(); // Auto-switch to current deck scope
+    showScopeMenu = false;
+    // Force page refresh to update stats
+    goto('/', { invalidateAll: true });
   }
 
   function toggleAccountMenu() {
