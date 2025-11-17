@@ -154,31 +154,29 @@
             </button>
           </div>
 
-          <!-- Deck List (when in current mode) -->
-          {#if $scopeStore.type === 'current'}
-            <div class="p-3 max-h-64 overflow-y-auto">
-              <div class="text-xs font-semibold mb-2" style="color: var(--muted)">SELECT DECK</div>
-              {#each $deckStore.decks as deck}
-                <button
-                  on:click={() => selectDeck(deck.id)}
-                  class="w-full text-left px-3 py-2 rounded hover:opacity-80 transition-opacity mb-1 text-sm"
-                  style="background: {deck.id === $deckStore.currentDeckId ? 'rgba(191, 167, 106, 0.2)' : 'transparent'}"
-                >
-                  <div class="flex items-center justify-between">
-                    <span>{deck.name}</span>
-                    {#if deck.id === $deckStore.currentDeckId}
-                      <span class="text-xs px-2 py-0.5 rounded" style="background: var(--accent-1); color: var(--bg)">
-                        CURRENT
-                      </span>
-                    {/if}
-                  </div>
-                  <div class="text-xs mt-1" style="color: var(--muted)">
-                    {deck.profile} profile
-                  </div>
-                </button>
-              {/each}
-            </div>
-          {/if}
+          <!-- Deck List (always show) -->
+          <div class="p-3 max-h-64 overflow-y-auto">
+            <div class="text-xs font-semibold mb-2" style="color: var(--muted)">SELECT DECK</div>
+            {#each $deckStore.decks as deck}
+              <button
+                on:click={() => selectDeck(deck.id)}
+                class="w-full text-left px-3 py-2 rounded hover:opacity-80 transition-opacity mb-1 text-sm"
+                style="background: {deck.id === $deckStore.currentDeckId ? 'rgba(191, 167, 106, 0.2)' : 'transparent'}"
+              >
+                <div class="flex items-center justify-between">
+                  <span>{deck.name}</span>
+                  {#if deck.id === $deckStore.currentDeckId}
+                    <span class="text-xs px-2 py-0.5 rounded" style="background: var(--accent-1); color: var(--bg)">
+                      CURRENT
+                    </span>
+                  {/if}
+                </div>
+                <div class="text-xs mt-1" style="color: var(--muted)">
+                  {deck.profile} profile
+                </div>
+              </button>
+            {/each}
+          </div>
         </div>
       {/if}
     </div>
