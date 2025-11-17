@@ -20,6 +20,7 @@
   let error = '';
   let keyboardEnabled = true;
   let dataStore: IDataStore | null = null;
+  let freeStudyMode = false;
 
   onMount(async () => {
     try {
@@ -42,12 +43,25 @@
         leechThreshold: $settingsStore.leechThreshold,
       };
 
-      const { cards } = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, config);
+      let { cards } = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, config);
 
+      // If no cards due, enable free study mode with all cards
       if (cards.length === 0) {
-        error = 'No cards due for review. Check back later!';
-        loading = false;
-        return;
+        freeStudyMode = true;
+        const freeStudyConfig = {
+          dueLimit: 10000, // Very high limit to get all cards
+          newPerDay: 10000,
+          leechThreshold: $settingsStore.leechThreshold,
+        };
+
+        const result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, freeStudyConfig);
+        cards = result.cards;
+
+        if (cards.length === 0) {
+          error = 'No cards in this deck. Add some words to get started!';
+          loading = false;
+          return;
+        }
       }
 
       studyStore.startSession(cards);
@@ -142,6 +156,15 @@
 <Header />
 
 <div class="min-h-screen flex flex-col">
+  <!-- Free Study Mode Banner -->
+  {#if freeStudyMode && !loading && !error}
+    <div class="px-6 py-3 text-center" style="background: var(--accent-2); color: var(--bg)">
+      <p class="text-sm font-medium">
+        Free Study Mode - No cards due, reviewing all deck cards
+      </p>
+    </div>
+  {/if}
+
   <!-- Progress Header -->
   <div class="p-4 flex items-center justify-between" style="background: var(--bg); border-bottom: 1px solid var(--card-border)">
     <button

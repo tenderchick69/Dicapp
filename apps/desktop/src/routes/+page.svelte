@@ -6,8 +6,7 @@
   import { scopeStore } from '$lib/stores/scope';
   import { authStore } from '$lib/stores/auth';
   import Header from '$lib/components/Header.svelte';
-  import NewDeckDialog from '$lib/components/NewDeckDialog.svelte';
-  import { Plus, FileUp, Compass, LogIn } from 'lucide-svelte';
+  import { Compass, LogIn } from 'lucide-svelte';
 
   let stats = {
     total: 0,
@@ -18,7 +17,6 @@
     leeches: 0,
   };
   let loading = true;
-  let showNewDeckDialog = false;
 
   async function loadStats() {
     try {
@@ -60,30 +58,6 @@
       return;
     }
     goto('/study');
-  }
-
-  function goToImport() {
-    goto('/import');
-  }
-
-  function goToClinic() {
-    if (!$deckStore.currentDeckId) {
-      alert('Create a deck first.');
-      return;
-    }
-    goto('/clinic');
-  }
-
-  function goToSettings() {
-    goto('/settings');
-  }
-
-  function goToDecks() {
-    showNewDeckDialog = true;
-  }
-
-  function closeNewDeckDialog() {
-    showNewDeckDialog = false;
   }
 
   function goToExplore() {
@@ -147,38 +121,13 @@
       </div>
     {:else if $deckStore.decks.length === 0}
       <!-- Empty State (No Decks) -->
-      <div class="space-y-6">
-        <div class="text-center py-8 px-6 rounded-lg" style="background: var(--card-bg); border: 1px solid var(--card-border)">
-          <p class="text-lg mb-6" style="color: var(--muted)">
-            Get started by creating your first deck
-          </p>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              on:click={goToDecks}
-              class="py-4 px-6 rounded-lg font-medium transition-all hover:scale-105 flex flex-col items-center gap-2"
-              style="background: var(--accent-1); color: var(--bg)"
-            >
-              <Plus size={24} />
-              <span>Create Deck</span>
-            </button>
-            <button
-              on:click={goToImport}
-              class="py-4 px-6 rounded-lg font-medium transition-all hover:scale-105 flex flex-col items-center gap-2"
-              style="background: var(--accent-2); color: var(--bg)"
-            >
-              <FileUp size={24} />
-              <span>Import CSV</span>
-            </button>
-            <button
-              on:click={goToExplore}
-              class="py-4 px-6 rounded-lg font-medium transition-all hover:scale-105 flex flex-col items-center gap-2"
-              style="background: var(--card-bg); border: 1px solid var(--card-border); color: var(--fg)"
-            >
-              <Compass size={24} />
-              <span>Explore & Clone</span>
-            </button>
-          </div>
-        </div>
+      <div class="text-center py-12 px-6 rounded-lg" style="background: var(--card-bg); border: 1px solid var(--card-border)">
+        <p class="text-lg mb-4" style="color: var(--muted)">
+          Create your first deck to get started
+        </p>
+        <p class="text-sm" style="color: var(--muted)">
+          Use the menu in the header to create, import, or explore decks
+        </p>
       </div>
     {:else}
       <!-- Stats -->
@@ -221,5 +170,3 @@
     {/if}
   </div>
 </div>
-
-<NewDeckDialog open={showNewDeckDialog} onClose={closeNewDeckDialog} />
