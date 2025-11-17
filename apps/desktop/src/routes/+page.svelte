@@ -201,61 +201,15 @@
         </div>
       </div>
 
-      <!-- Deck Selector -->
-      <div class="space-y-4 mb-6">
-        <h2 class="text-lg font-semibold mb-3">Select a Deck to Study</h2>
-        <div class="space-y-2">
-          {#each $deckStore.decks as deck}
-            <button
-              on:click={() => deckStore.setCurrent(deck.id)}
-              class="w-full p-4 rounded-lg text-left transition-all hover:scale-[1.01]"
-              style="background: {deck.id === $deckStore.currentDeckId ? 'var(--accent-1)' : 'var(--card-bg)'};
-                     border: 1px solid {deck.id === $deckStore.currentDeckId ? 'var(--accent-1)' : 'var(--card-border)'};
-                     color: {deck.id === $deckStore.currentDeckId ? 'var(--bg)' : 'var(--fg)'}"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="font-semibold">{deck.name}</div>
-                  <div class="text-sm opacity-80">{deck.profile} profile</div>
-                </div>
-                {#if deck.id === $deckStore.currentDeckId}
-                  <div class="text-sm font-semibold">SELECTED</div>
-                {/if}
-              </div>
-            </button>
-          {/each}
-        </div>
-      </div>
-
       <!-- Actions -->
-      <div class="space-y-4">
+      <div class="space-y-6">
         <button
           on:click={startReview}
-          class="w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          class="w-full py-6 px-6 rounded-lg font-semibold text-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
           style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
         >
           Start Review
         </button>
-
-        <div class="grid grid-cols-2 gap-4">
-          <button
-            on:click={goToDecks}
-            class="py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: var(--accent-2); color: var(--bg)"
-          >
-            Manage Decks
-          </button>
-
-          {#if stats.leeches > 0}
-            <button
-              on:click={goToClinic}
-              class="py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02]"
-              style="background: var(--danger); color: white"
-            >
-              Clinic ({stats.leeches})
-            </button>
-          {/if}
-        </div>
       </div>
 
       <!-- Total count -->
