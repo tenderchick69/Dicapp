@@ -28,7 +28,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `runedeck-export-${Date.now()}.csv`;
+      a.download = `vocapp-export-${Date.now()}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
@@ -50,7 +50,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `runedeck-export-${Date.now()}.json`;
+      a.download = `vocapp-export-${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
