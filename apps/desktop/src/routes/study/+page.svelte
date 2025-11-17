@@ -188,8 +188,11 @@
       // Move to next card
       studyStore.nextCard();
 
+      // Get fresh state after moving to next card (state variable is now stale)
+      const currentState = $studyStore;
+
       // If main queue is empty but we have "Again" cards, add them back
-      if (state.session.queue.length === 0 && againQueue.length > 0) {
+      if (currentState.session && currentState.session.queue.length === 0 && againQueue.length > 0) {
         studyStore.addCards(againQueue);
         againQueue = []; // Clear the again queue
       }
