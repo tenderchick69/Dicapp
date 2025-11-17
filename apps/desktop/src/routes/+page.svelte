@@ -102,11 +102,8 @@
     <!-- Title Section -->
     <div class="text-center mb-12">
       <h1 class="text-6xl font-display font-bold mb-4" style="color: var(--accent-1)">
-        DIC APP
+        VOC APP
       </h1>
-      <p class="text-xl" style="color: var(--muted)">
-        Advanced vocabulary training with spaced repetition
-      </p>
       {#if $authStore.user && $scopeStore.type === 'all'}
         <p class="text-sm mt-2" style="color: var(--accent-2)">
           Studying across all {$deckStore.decks.length} decks
@@ -204,6 +201,32 @@
         </div>
       </div>
 
+      <!-- Deck Selector -->
+      <div class="space-y-4 mb-6">
+        <h2 class="text-lg font-semibold mb-3">Select a Deck to Study</h2>
+        <div class="space-y-2">
+          {#each $deckStore.decks as deck}
+            <button
+              on:click={() => deckStore.setCurrent(deck.id)}
+              class="w-full p-4 rounded-lg text-left transition-all hover:scale-[1.01]"
+              style="background: {deck.id === $deckStore.currentDeckId ? 'var(--accent-1)' : 'var(--card-bg)'};
+                     border: 1px solid {deck.id === $deckStore.currentDeckId ? 'var(--accent-1)' : 'var(--card-border)'};
+                     color: {deck.id === $deckStore.currentDeckId ? 'var(--bg)' : 'var(--fg)'}"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-semibold">{deck.name}</div>
+                  <div class="text-sm opacity-80">{deck.profile} profile</div>
+                </div>
+                {#if deck.id === $deckStore.currentDeckId}
+                  <div class="text-sm font-semibold">SELECTED</div>
+                {/if}
+              </div>
+            </button>
+          {/each}
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="space-y-4">
         <button
@@ -223,22 +246,6 @@
             Manage Decks
           </button>
 
-          <button
-            on:click={goToImport}
-            class="py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: var(--card-bg); border: 1px solid var(--card-border); color: var(--fg)"
-          >
-            Import CSV
-          </button>
-
-          <button
-            on:click={goToExplore}
-            class="py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: var(--card-bg); border: 1px solid var(--card-border); color: var(--fg)"
-          >
-            Explore Decks
-          </button>
-
           {#if stats.leeches > 0}
             <button
               on:click={goToClinic}
@@ -248,14 +255,6 @@
               Clinic ({stats.leeches})
             </button>
           {/if}
-
-          <button
-            on:click={goToSettings}
-            class="py-3 px-4 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            style="background: var(--card-bg); border: 1px solid var(--card-border); color: var(--fg)"
-          >
-            Settings
-          </button>
         </div>
       </div>
 

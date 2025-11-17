@@ -4,7 +4,7 @@
   import { deckStore } from '$lib/stores/deck';
   import { scopeStore } from '$lib/stores/scope';
   import { authStore } from '$lib/stores/auth';
-  import { Home, Menu, User, LogOut, Settings as SettingsIcon } from 'lucide-svelte';
+  import { Home, Menu, User, LogOut, Settings as SettingsIcon, Compass } from 'lucide-svelte';
 
   let showScopeMenu = false;
   let showAccountMenu = false;
@@ -58,6 +58,14 @@
     goto('/auth/signin');
   }
 
+  function goToSettings() {
+    goto('/settings');
+  }
+
+  function goToExplore() {
+    goto('/explore');
+  }
+
   $: currentDeck = $deckStore.decks.find(d => d.id === $deckStore.currentDeckId);
   $: scopeLabel = $scopeStore.type === 'all'
     ? 'All Decks'
@@ -75,12 +83,37 @@
     >
       <Home size={24} style="color: var(--accent-1)" />
       <span class="text-xl font-display font-bold" style="color: var(--accent-1)">
-        DIC APP
+        VOC APP
       </span>
     </button>
 
     <!-- Right Side -->
     <div class="flex items-center gap-3">
+      <!-- Explore Decks -->
+      {#if $authStore.user}
+        <button
+          on:click={goToExplore}
+          class="flex items-center gap-2 px-3 py-2 rounded-lg hover:opacity-80 transition-all"
+          style="background: var(--card-bg); border: 1px solid var(--card-border)"
+          title="Explore Public Decks"
+        >
+          <Compass size={18} />
+          <span class="hidden md:inline">Explore</span>
+        </button>
+      {/if}
+
+      <!-- Settings -->
+      {#if $authStore.user}
+        <button
+          on:click={goToSettings}
+          class="flex items-center gap-2 px-3 py-2 rounded-lg hover:opacity-80 transition-all"
+          style="background: var(--card-bg); border: 1px solid var(--card-border)"
+          title="Settings"
+        >
+          <SettingsIcon size={18} />
+        </button>
+      {/if}
+
       <!-- Deck/Scope Switcher -->
       {#if $authStore.user}
         <div class="relative">
