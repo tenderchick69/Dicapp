@@ -131,46 +131,74 @@
         </p>
       </div>
     {:else}
-      <!-- Stats - Zen Nature Icons -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 zen-stats">
-        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 0ms">
-          <div class="flex justify-center mb-2">
-            <Seedling size={32} animate={true} />
-          </div>
-          <div class="text-3xl font-bold mb-1" style="color: var(--accent-1)">{stats.new}</div>
-          <div class="text-sm" style="color: var(--muted)">New</div>
+      <!-- Main Review Status - Big and Clear -->
+      <div class="review-status mb-8" style="--stat-delay: 0ms">
+        <div class="flex justify-center mb-3">
+          {#if stats.due > 0}
+            <WaterDrop size={48} animate={true} />
+          {:else}
+            <Bamboo width={32} height={48} animate={true} />
+          {/if}
         </div>
-        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 100ms">
-          <div class="flex justify-center mb-2">
-            <WaterDrop size={28} animate={true} />
-          </div>
-          <div class="text-3xl font-bold mb-1" style="color: var(--accent-2)">{stats.learning}</div>
-          <div class="text-sm" style="color: var(--muted)">Learning</div>
+        <div class="text-5xl font-bold mb-2" style="color: {stats.due > 0 ? 'var(--accent-1)' : 'var(--g-good)'}">
+          {stats.due}
         </div>
-        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 200ms">
-          <div class="flex justify-center mb-2">
-            <Bamboo width={20} height={32} animate={true} />
-          </div>
-          <div class="text-3xl font-bold mb-1" style="color: var(--g-good)">{stats.retention}</div>
-          <div class="text-sm" style="color: var(--muted)">Retention</div>
+        <div class="text-xl mb-2" style="color: var(--fg)">
+          {stats.due === 1 ? 'card' : 'cards'} ready to review
         </div>
-        <div class="stat-card" style="border-color: var(--card-border); --stat-delay: 300ms">
-          <div class="flex justify-center mb-2">
-            <WiltedLeaf size={28} animate={true} />
+        {#if stats.due === 0 && stats.learning > 0}
+          <p class="text-sm mt-2" style="color: var(--muted)">
+            You have {stats.learning} cards in learning. They'll be ready for review soon!
+          </p>
+        {:else if stats.due === 0 && stats.new > 0}
+          <p class="text-sm mt-2" style="color: var(--muted)">
+            You have {stats.new} new cards waiting. Start reviewing to learn them!
+          </p>
+        {:else if stats.due === 0 && stats.total === 0}
+          <p class="text-sm mt-2" style="color: var(--muted)">
+            No cards in this deck. Add some words to get started!
+          </p>
+        {/if}
+      </div>
+
+      <!-- Secondary Stats - Smaller -->
+      <div class="grid grid-cols-3 gap-3 mb-8 zen-stats">
+        <div class="stat-card-small" style="border-color: var(--card-border); --stat-delay: 100ms" title="New cards you haven't studied yet">
+          <div class="flex justify-center mb-1">
+            <Seedling size={24} animate={false} />
           </div>
-          <div class="text-3xl font-bold mb-1" style="color: var(--danger)">{stats.leeches}</div>
-          <div class="text-sm" style="color: var(--muted)">Leeches</div>
+          <div class="text-2xl font-bold mb-0.5" style="color: var(--accent-1)">{stats.new}</div>
+          <div class="text-xs" style="color: var(--muted)">New</div>
+        </div>
+        <div class="stat-card-small" style="border-color: var(--card-border); --stat-delay: 150ms" title="Cards you're actively learning (interval < 21 days)">
+          <div class="flex justify-center mb-1">
+            <WaterDrop size={20} animate={false} />
+          </div>
+          <div class="text-2xl font-bold mb-0.5" style="color: var(--accent-2)">{stats.learning}</div>
+          <div class="text-xs" style="color: var(--muted)">Learning</div>
+        </div>
+        <div class="stat-card-small" style="border-color: var(--card-border); --stat-delay: 200ms" title="Difficult cards (failed 8+ times)">
+          <div class="flex justify-center mb-1">
+            <WiltedLeaf size={20} animate={false} />
+          </div>
+          <div class="text-2xl font-bold mb-0.5" style="color: var(--danger)">{stats.leeches}</div>
+          <div class="text-xs" style="color: var(--muted)">Leeches</div>
         </div>
       </div>
 
-      <!-- Actions -->
+      <!-- Action Button -->
       <div class="space-y-6">
         <button
           on:click={startReview}
-          class="w-full py-6 px-6 rounded-lg font-semibold text-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+          disabled={stats.due === 0}
+          class="w-full py-6 px-6 rounded-lg font-semibold text-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
         >
-          Start Review
+          {#if stats.due > 0}
+            Start Review ({stats.due} cards)
+          {:else}
+            No Cards Due
+          {/if}
         </button>
       </div>
 
@@ -178,6 +206,9 @@
       <div class="text-center mt-8">
         <p class="text-sm" style="color: var(--muted)">
           {stats.total} {stats.total === 1 ? 'word' : 'words'} in {$scopeStore.type === 'all' ? 'all decks' : 'current deck'}
+          {#if stats.retention > 0}
+            <span class="ml-2">· {stats.retention}% retention</span>
+          {/if}
         </p>
       </div>
     {/if}
@@ -185,21 +216,34 @@
 </div>
 
 <style>
-  /* Zen Stats - Staggered Entrance Animation */
-  .stat-card {
+  /* Main Review Status - Prominent Display */
+  .review-status {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    animation: stat-appear 0.6s ease-out backwards;
+    animation-delay: var(--stat-delay);
+    box-shadow: 0 4px 16px rgba(34, 139, 34, 0.1);
+  }
+
+  /* Secondary Stats - Smaller Cards */
+  .stat-card-small {
     background: var(--card-bg);
     border: 1px solid;
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: 8px;
+    padding: 0.75rem 0.5rem;
     text-align: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: stat-appear 0.6s ease-out backwards;
     animation-delay: var(--stat-delay);
+    cursor: help;
   }
 
-  .stat-card:hover {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 8px 24px rgba(34, 139, 34, 0.15);
+  .stat-card-small:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(34, 139, 34, 0.12);
     border-color: var(--accent-1);
   }
 
@@ -216,11 +260,12 @@
 
   /* Respect user motion preferences */
   @media (prefers-reduced-motion: reduce) {
-    .stat-card {
+    .review-status,
+    .stat-card-small {
       animation: none;
     }
 
-    .stat-card:hover {
+    .stat-card-small:hover {
       transform: none;
     }
   }
