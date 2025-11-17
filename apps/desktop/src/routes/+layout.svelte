@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { themeStore } from '$lib/stores/settings';
   import { COMMIT, BRANCH, BUILD } from '$lib/buildInfo';
+  import FallingLeaves from '$lib/components/FallingLeaves.svelte';
 
   onMount(() => {
     // Apply theme on mount
@@ -17,6 +18,9 @@
     }
   }
 </script>
+
+<!-- Zen Serenity - Falling Leaves Background -->
+<FallingLeaves />
 
 <slot />
 
