@@ -145,7 +145,7 @@ export const POST: RequestHandler = async ({ request }) => {
       gloss_de: word.gloss_de || null,
       etymology: word.etymology || null,
       mnemonic: word.mnemonic || null,
-      tags: word.tags && word.tags.length > 0 ? word.tags.join(';') : '', // Semicolon-delimited string
+      tags: word.tags && word.tags.length > 0 ? word.tags : [], // PostgreSQL array type
       freq: word.freq || 3.0,
       created_at: new Date(word.created_at).toISOString(),
       updated_at: new Date(word.updated_at).toISOString(),
