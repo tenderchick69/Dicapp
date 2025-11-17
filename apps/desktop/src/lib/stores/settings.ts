@@ -5,7 +5,7 @@ type Theme = 'dark' | 'light';
 
 // Theme store with localStorage persistence
 function createThemeStore() {
-  const defaultTheme: Theme = 'dark';
+  const defaultTheme: Theme = 'light'; // Zen Serenity Theme (beige/green)
   const stored = browser ? localStorage.getItem('theme') : null;
   const initial = (stored as Theme) || defaultTheme;
 

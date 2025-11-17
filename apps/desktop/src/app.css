@@ -10,7 +10,21 @@
   --card-h: 760px;
   --radius: 16px;
 
-  /* Zen Serenity Theme - Nature-Inspired Colors */
+  /* Typography - Zen Serenity */
+  --font-display: 'Lora', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Font weights */
+  --fw-light: 300;
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+}
+
+/* Zen Serenity Theme (Default / Light Mode) - Nature-Inspired Colors */
+:root,
+:root[data-theme='light'] {
   --bg: #f5f5dc;              /* Beige - soft canvas background */
   --fg: #2d3e2d;              /* Deep forest green - main text */
   --muted: #6b7a6b;           /* Sage gray - secondary text */
@@ -38,17 +52,6 @@
   /* Shadows - Soft green-tinted */
   --shadow-lg: 0 12px 32px rgba(34, 139, 34, 0.15);
   --shadow-card: 0 6px 24px rgba(34, 139, 34, 0.12), 0 0 0 1px var(--card-border);
-
-  /* Typography - Zen Serenity */
-  --font-display: 'Lora', serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Font weights */
-  --fw-light: 300;
-  --fw-normal: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
 }
 
 /* Classic dark theme fallback - can be toggled in settings */

@@ -43,7 +43,7 @@
     height: var(--card-h);
     max-height: 85vh;
     background: var(--card-bg);
-    border-radius: 48% 52% 45% 55% / 52% 48% 52% 48%;
+    border-radius: 32px;
     box-shadow: var(--shadow-card);
     display: flex;
     flex-direction: column;
@@ -51,6 +51,7 @@
     position: relative;
     backdrop-filter: blur(10px);
     will-change: transform;
+    padding: 0.5rem;
   "
 >
   <!-- Water ripple effect on reveal -->
