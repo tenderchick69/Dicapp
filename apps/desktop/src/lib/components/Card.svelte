@@ -43,7 +43,7 @@
     height: var(--card-h);
     max-height: 85vh;
     background: var(--card-bg);
-    border-radius: 45% 55% 42% 58% / 48% 52% 48% 52%;
+    border-radius: var(--radius);
     box-shadow: var(--shadow-card);
     display: flex;
     flex-direction: column;
@@ -195,27 +195,24 @@
 </div>
 
 <style>
-  /* Zen Card - Floating Leaf Effect */
+  /* Zen Card - Subtle Floating Effect */
   .zen-card {
-    animation: float 6s ease-in-out infinite;
+    animation: float 8s ease-in-out infinite;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
   .zen-card:hover {
-    transform: translateY(-6px) scale(1.01);
+    transform: translateY(-4px);
     box-shadow: 0 12px 48px rgba(34, 139, 34, 0.2), 0 0 0 1px var(--card-border);
   }
 
   @keyframes float {
     0%,
     100% {
-      transform: translateY(0px) rotate(0deg);
+      transform: translateY(0px);
     }
-    33% {
-      transform: translateY(-4px) rotate(0.3deg);
-    }
-    66% {
-      transform: translateY(2px) rotate(-0.3deg);
+    50% {
+      transform: translateY(-3px);
     }
   }
 
