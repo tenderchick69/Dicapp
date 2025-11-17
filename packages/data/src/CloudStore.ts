@@ -423,7 +423,7 @@ export class CloudStore implements IDataStore {
       .select('*, words!inner(*)')
       .in('words.deck_id', deckIds)
       .eq('is_new', 1)
-      .order('words.created_at', { ascending: true })
+      .order('word_id', { ascending: true })  // Order by scheduling table field, not joined table
       .limit(limit);
 
     if (error) throw new Error(`Failed to get new words by scope: ${error.message}`);
