@@ -42,6 +42,11 @@ export interface IDataStore {
   upsertScheduling(data: SchedulingData): Promise<void>;
 
   /**
+   * Reset all scheduling for a deck (make all cards "new" again)
+   */
+  resetDeckScheduling(deckId: string): Promise<void>;
+
+  /**
    * Get due cards (due_ts <= now) with scheduling data
    */
   getDue(deckId: string, limit: number, now?: number): Promise<WordWithScheduling[]>;
@@ -84,6 +89,11 @@ export interface IDataStore {
     retention: number;
     leeches: number;
   }>;
+
+  /**
+   * Get all words with scheduling by scope (ignoring due dates - for practice mode)
+   */
+  getAllWordsByScope(scope: StudyScope, currentDeckId: string, limit: number): Promise<WordWithScheduling[]>;
 
   // === Reviews ===
 

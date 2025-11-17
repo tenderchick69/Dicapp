@@ -105,16 +105,12 @@
       return await store.getNewByScope($scopeStore, deckId, 10000);
     } else if (filter === 'learning') {
       // Learning cards: interval > 0 AND interval < 21
-      // Get all cards with high limit, then filter client-side
-      const allCards = await store.getDueByScope($scopeStore, deckId, 10000);
+      // Get ALL cards (ignoring due dates), then filter for learning cards client-side
+      const allCards = await store.getAllWordsByScope($scopeStore, deckId, 10000);
       return allCards.filter(card => card.scheduling.interval > 0 && card.scheduling.interval < 21);
     } else {
-      // All cards - get both due and new, with very high limits
-      const [due, fresh] = await Promise.all([
-        store.getDueByScope($scopeStore, deckId, 10000),
-        store.getNewByScope($scopeStore, deckId, 10000),
-      ]);
-      return [...due, ...fresh];
+      // All cards - get everything regardless of due dates or new status
+      return await store.getAllWordsByScope($scopeStore, deckId, 10000);
     }
   }
 

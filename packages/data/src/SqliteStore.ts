@@ -297,6 +297,18 @@ export class SqliteStore implements IDataStore {
     );
   }
 
+  async resetDeckScheduling(deckId: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    // Reset all scheduling for words in this deck to initial state
+    await this.db.execute(
+      `UPDATE scheduling
+       SET due_ts = 0, interval = 0, ease = 2.5, lapses = 0, is_new = 1
+       WHERE word_id IN (SELECT id FROM words WHERE deck_id = ?)`,
+      [deckId]
+    );
+  }
+
   async getDue(deckId: string, limit: number, now = Date.now()): Promise<WordWithScheduling[]> {
     if (!this.db) throw new Error('Database not initialized');
 
@@ -485,6 +497,30 @@ export class SqliteStore implements IDataStore {
     const retention = total > 0 ? Math.round(((total - newCount - leeches) / total) * 100) : 0;
 
     return { total, new: newCount, due, learning, retention, leeches };
+  }
+
+  async getAllWordsByScope(scope: StudyScope, currentDeckId: string, limit: number): Promise<WordWithScheduling[]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const deckIds = await this.resolveScopeDeckIds(scope, currentDeckId);
+    if (deckIds.length === 0) {
+      return [];
+    }
+
+    const placeholders = deckIds.map(() => '?').join(',');
+
+    // Get ALL words with scheduling, ignoring due_ts (for practice mode)
+    const rows = await this.db.select<any>(
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+       FROM words w
+       INNER JOIN scheduling s ON w.id = s.word_id
+       WHERE w.deck_id IN (${placeholders})
+       ORDER BY w.created_at ASC
+       LIMIT ?`,
+      [...deckIds, limit]
+    );
+
+    return rows.map((row) => this.mapRowToWordWithScheduling(row));
   }
 
   // === Reviews ===

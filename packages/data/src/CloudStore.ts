@@ -327,6 +327,33 @@ export class CloudStore implements IDataStore {
     if (error) throw new Error(`Failed to upsert scheduling: ${error.message}`);
   }
 
+  async resetDeckScheduling(deckId: string): Promise<void> {
+    // Get all word IDs in this deck
+    const { data: words, error: wordsError } = await this.supabase
+      .from('words')
+      .select('id')
+      .eq('deck_id', deckId);
+
+    if (wordsError) throw new Error(`Failed to get words for deck reset: ${wordsError.message}`);
+
+    const wordIds = words.map((w) => w.id);
+    if (wordIds.length === 0) return;
+
+    // Reset scheduling for all words in this deck
+    const { error } = await this.supabase
+      .from('scheduling')
+      .update({
+        due_ts: 0,
+        interval: 0,
+        ease: 2.5,
+        lapses: 0,
+        is_new: true,
+      })
+      .in('word_id', wordIds);
+
+    if (error) throw new Error(`Failed to reset deck scheduling: ${error.message}`);
+  }
+
   async getDue(deckId: string, limit: number, now = Date.now()): Promise<WordWithScheduling[]> {
     const { data, error } = await this.supabase
       .from('scheduling')
@@ -447,6 +474,27 @@ export class CloudStore implements IDataStore {
       .order('lapses', { ascending: false });
 
     if (error) throw new Error(`Failed to get leeches by scope: ${error.message}`);
+
+    return data.map((row) => this.mapRowToWordWithScheduling(row));
+  }
+
+  async getAllWordsByScope(
+    scope: StudyScope,
+    currentDeckId: string,
+    limit: number
+  ): Promise<WordWithScheduling[]> {
+    const deckIds = await this.resolveScopeDeckIds(scope, currentDeckId);
+    if (deckIds.length === 0) return [];
+
+    // Get ALL words with scheduling, ignoring due_ts (for practice mode)
+    const { data, error } = await this.supabase
+      .from('scheduling')
+      .select('*, words!inner(*)')
+      .in('words.deck_id', deckIds)
+      .order('word_id', { ascending: true })
+      .limit(limit);
+
+    if (error) throw new Error(`Failed to get all words by scope: ${error.message}`);
 
     return data.map((row) => this.mapRowToWordWithScheduling(row));
   }

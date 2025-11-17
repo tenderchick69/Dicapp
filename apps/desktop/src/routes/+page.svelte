@@ -69,6 +69,29 @@
     goto(`/study?mode=practice&filter=${mode}`);
   }
 
+  async function resetDeck() {
+    if (!$deckStore.currentDeckId) {
+      alert('No deck selected.');
+      return;
+    }
+
+    const confirmed = confirm(
+      'Reset all scheduling for this deck?\n\nThis will make ALL cards "new" again, erasing all progress. This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const dataStore = await getDataStore();
+      await dataStore.resetDeckScheduling($deckStore.currentDeckId);
+      await loadStats(); // Reload stats to show updated numbers
+      alert('Deck reset successfully! All cards are now "new".');
+    } catch (err: any) {
+      console.error('Failed to reset deck:', err);
+      alert(`Failed to reset deck: ${err.message}`);
+    }
+  }
+
   function goToExplore() {
     goto('/explore');
   }
@@ -223,7 +246,7 @@
               style="background: var(--card-bg); border: 1.5px solid var(--accent-1); color: var(--accent-1)"
               title="Practice new cards you haven't seen yet"
             >
-              Practice New ({stats.new})
+              Learn New ({stats.new})
             </button>
             <button
               on:click={() => startPractice('learning')}
@@ -232,7 +255,7 @@
               style="background: var(--card-bg); border: 1.5px solid var(--accent-2); color: var(--accent-2)"
               title="Practice cards you're actively learning"
             >
-              Practice Learning ({stats.learning})
+              Learn ({stats.learning})
             </button>
           </div>
           <button
@@ -241,8 +264,20 @@
             style="background: var(--card-bg); border: 1.5px solid var(--muted); color: var(--fg)"
             title="Practice all cards in deck, ignore due dates"
           >
-            Practice All Cards ({stats.total})
+            Learn All ({stats.total})
           </button>
+
+          <!-- Reset Deck -->
+          <div class="mt-6 pt-4" style="border-top: 1px solid var(--card-border)">
+            <button
+              on:click={resetDeck}
+              class="w-full py-2 px-4 rounded-lg font-medium text-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style="background: transparent; border: 1px solid var(--danger); color: var(--danger); opacity: 0.7"
+              title="Reset all scheduling - make all cards 'new' again"
+            >
+              Reset Deck
+            </button>
+          </div>
         {/if}
       </div>
 

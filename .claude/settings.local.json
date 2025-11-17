@@ -18,7 +18,10 @@
       "Bash(echo:*)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(git revert:*)",
+      "Bash(pnpm check:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
