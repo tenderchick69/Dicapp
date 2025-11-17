@@ -249,23 +249,14 @@
               Learn New ({stats.new})
             </button>
             <button
-              on:click={() => startPractice('learning')}
-              disabled={stats.learning === 0}
-              class="py-4 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+              on:click={() => startPractice('all')}
+              class="py-4 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
               style="background: var(--card-bg); border: 1.5px solid var(--accent-2); color: var(--accent-2)"
-              title="Practice cards you're actively learning"
+              title="Practice all cards - ignore due dates and learn as much as you want"
             >
-              Learn ({stats.learning})
+              Learn ({stats.total})
             </button>
           </div>
-          <button
-            on:click={() => startPractice('all')}
-            class="w-full py-3 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style="background: var(--card-bg); border: 1.5px solid var(--muted); color: var(--fg)"
-            title="Practice all cards in deck, ignore due dates"
-          >
-            Learn All ({stats.total})
-          </button>
 
           <!-- Reset Deck -->
           <div class="mt-6 pt-4" style="border-top: 1px solid var(--card-border)">

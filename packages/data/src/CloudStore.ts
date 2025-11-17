@@ -347,7 +347,7 @@ export class CloudStore implements IDataStore {
         interval: 0,
         ease: 2.5,
         lapses: 0,
-        is_new: true,
+        is_new: 1,
       })
       .in('word_id', wordIds);
 

@@ -24,6 +24,7 @@
   let freeStudyMode = false;
   let practiceMode: 'new' | 'learning' | 'all' | null = null;
   let againQueue: ScheduledWord[] = []; // Cards marked "Again" for immediate re-review
+  let navigatingHome = false; // Flag to prevent completion redirect when user clicks Home
 
   onMount(async () => {
     try {
@@ -199,11 +200,12 @@
   }
 
   function goHome() {
+    navigatingHome = true; // Set flag to prevent completion redirect
     studyStore.reset();
     goto('/');
   }
 
-  $: if ($isComplete && !loading) {
+  $: if ($isComplete && !loading && !navigatingHome) {
     setTimeout(() => {
       studyStore.reset();
       goto('/complete');
