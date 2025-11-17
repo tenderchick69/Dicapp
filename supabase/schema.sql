@@ -112,7 +112,7 @@ create table public.words (
   gloss_de text default '',
   etymology text default '',
   mnemonic text default '',
-  tags text default '', -- semicolon-separated
+  tags text[] default '{}', -- PostgreSQL array
   freq double precision default 3.0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
