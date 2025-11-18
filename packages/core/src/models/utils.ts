@@ -31,9 +31,12 @@ export function createDeck(
   partial: Partial<Deck> & Pick<Deck, 'name' | 'profile'>
 ): Deck {
   const now = Date.now();
+  // Generate unique slug with random suffix to avoid duplicates
+  const baseSlug = slugify(partial.name);
+  const uniqueSlug = `${baseSlug}-${uuid().slice(0, 8)}`;
   return {
     id: uuid(),
-    slug: slugify(partial.name),
+    slug: uniqueSlug,
     created_at: now,
     config: DEFAULT_DECK_CONFIG,
     ...partial,
