@@ -58,9 +58,18 @@
     } else {
       loading = false;
     }
+
+    // Check for import success param and clear it
+    if ($page.url.searchParams.get('imported') === 'success') {
+      // Stats will be refreshed by reactive statement below
+      // Clear the URL param
+      const url = new URL(window.location.href);
+      url.searchParams.delete('imported');
+      window.history.replaceState({}, '', url.toString());
+    }
   });
 
-  // Reload stats when scope changes
+  // Reload stats when deck or scope changes
   $: if ($authStore.user && $scopeStore && $deckStore.currentDeckId) {
     loadStats();
   }
