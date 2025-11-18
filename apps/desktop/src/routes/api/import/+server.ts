@@ -104,7 +104,6 @@ export const POST: RequestHandler = async ({ request }) => {
           config: {
             newPerDay: 10,
             dueLimit: 20,
-            leechThreshold: 8,
             studyOrientation: 'word-to-def',
             learningReveal: 'minimal',
           },

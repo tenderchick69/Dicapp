@@ -7,13 +7,11 @@ import type { Word, SchedulingData, WordWithScheduling, StudyScope } from '../mo
 export interface QueueConfig {
   dueLimit: number;
   newPerDay: number;
-  leechThreshold: number;
 }
 
 export const DEFAULT_QUEUE_CONFIG: QueueConfig = {
   dueLimit: 20,
   newPerDay: 10,
-  leechThreshold: 8,
 };
 
 /**
@@ -21,7 +19,6 @@ export const DEFAULT_QUEUE_CONFIG: QueueConfig = {
  */
 export interface QueueResult {
   cards: WordWithScheduling[];
-  leeches: WordWithScheduling[];
 }
 
 /**
@@ -33,18 +30,17 @@ export async function buildQueue(
   deckId: string,
   config = DEFAULT_QUEUE_CONFIG
 ): Promise<QueueResult> {
-  const { dueLimit, newPerDay, leechThreshold } = config;
+  const { dueLimit, newPerDay } = config;
 
-  const [due, fresh, leeches] = await Promise.all([
+  const [due, fresh] = await Promise.all([
     store.getDue(deckId, dueLimit),
     store.getNew(deckId, newPerDay),
-    store.getLeeches(deckId, leechThreshold),
   ]);
 
   // Combine due and new cards
   const cards = [...due, ...fresh];
 
-  return { cards, leeches };
+  return { cards };
 }
 
 /**
@@ -56,18 +52,17 @@ export async function buildQueueByScope(
   currentDeckId: string,
   config = DEFAULT_QUEUE_CONFIG
 ): Promise<QueueResult> {
-  const { dueLimit, newPerDay, leechThreshold } = config;
+  const { dueLimit, newPerDay } = config;
 
-  const [due, fresh, leeches] = await Promise.all([
+  const [due, fresh] = await Promise.all([
     store.getDueByScope(scope, currentDeckId, dueLimit),
     store.getNewByScope(scope, currentDeckId, newPerDay),
-    store.getLeechesByScope(scope, currentDeckId, leechThreshold),
   ]);
 
   // Combine due and new cards
   const cards = [...due, ...fresh];
 
-  return { cards, leeches };
+  return { cards };
 }
 
 /**

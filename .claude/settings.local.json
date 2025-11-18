@@ -21,7 +21,9 @@
       "Bash(git remote set-url:*)",
       "Bash(git revert:*)",
       "Bash(pnpm check:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []

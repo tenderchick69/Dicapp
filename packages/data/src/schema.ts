@@ -88,7 +88,7 @@ VALUES (
   'default',
   'full',
   ${Date.now()},
-  '{"newPerDay":10,"dueLimit":20,"leechThreshold":8,"studyOrientation":"word-to-def","learningReveal":"minimal"}'
+  '{"newPerDay":10,"dueLimit":20,"studyOrientation":"word-to-def","learningReveal":"minimal"}'
 );
 
 -- Assign all existing words to default deck

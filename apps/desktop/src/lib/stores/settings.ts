@@ -40,7 +40,6 @@ export type LearningRevealPolicy = 'minimal' | 'rich';
 export interface AppSettings {
   newPerDay: number;
   dueLimit: number;
-  leechThreshold: number;
   studyOrientation: StudyOrientation;
   learningReveal: LearningRevealPolicy;
 }
@@ -48,7 +47,6 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   newPerDay: 10,
   dueLimit: 20,
-  leechThreshold: 8,
   studyOrientation: 'word-to-def',
   learningReveal: 'minimal',
 };

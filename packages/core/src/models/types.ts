@@ -7,7 +7,6 @@ export type DeckProfile = 'simple' | 'full';
 export interface DeckConfig {
   newPerDay: number;
   dueLimit: number;
-  leechThreshold: number;
   studyOrientation: 'word-to-def' | 'def-to-word';
   learningReveal: 'minimal' | 'rich';
 }
@@ -15,7 +14,6 @@ export interface DeckConfig {
 export const DEFAULT_DECK_CONFIG: DeckConfig = {
   newPerDay: 10,
   dueLimit: 20,
-  leechThreshold: 8,
   studyOrientation: 'word-to-def',
   learningReveal: 'minimal',
 };
@@ -30,7 +28,6 @@ export const DeckSchema = z.object({
   config: z.object({
     newPerDay: z.number(),
     dueLimit: z.number(),
-    leechThreshold: z.number(),
     studyOrientation: z.enum(['word-to-def', 'def-to-word']),
     learningReveal: z.enum(['minimal', 'rich']),
   }),
@@ -131,7 +128,6 @@ export interface Settings {
   theme: 'dark' | 'light';
   new_per_day: number;
   due_limit: number;
-  leech_threshold: number;
   schema_version: number;
 }
 
@@ -139,6 +135,5 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
   new_per_day: 10,
   due_limit: 20,
-  leech_threshold: 8,
   schema_version: 1,
 };
