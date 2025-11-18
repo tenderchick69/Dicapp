@@ -90,7 +90,7 @@
     <!-- Overlay -->
     <div class="overlay"></div>
 
-    <!-- Falling petal -->
+    <!-- Falling petal - NO TEXT, JUST PETAL -->
     <div class="petal-container">
       <svg
         class="petal"
@@ -109,11 +109,7 @@
       </svg>
     </div>
 
-    <!-- Text -->
-    <div class="text-container">
-      <div class="mastery-text">Mastered</div>
-      <div class="mastery-subtitle">This card moves to the graveyard</div>
-    </div>
+    <!-- NO TEXT. NO MODAL. JUST GONG + PETAL. -->
   </div>
 {/if}
 
