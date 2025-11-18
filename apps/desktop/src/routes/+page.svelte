@@ -9,6 +9,7 @@
   import { Compass, LogIn } from 'lucide-svelte';
 
   let zenStats = {
+    total: 0,
     due: 0,
     new: 0,
     mastered: 0,
@@ -34,6 +35,7 @@
       ]);
 
       zenStats = {
+        total: allCards.length,
         due: dueCards.length,
         new: newCards.length,
         mastered: allCards.filter(card => card.scheduling.is_mastered === 1).length,
@@ -66,7 +68,7 @@
   function playDeck() {
     // Auto-select first deck if none selected
     if (!$deckStore.currentDeckId && $deckStore.decks.length > 0) {
-      deckStore.setCurrentDeck($deckStore.decks[0].id);
+      deckStore.selectDeck($deckStore.decks[0].id);
       // Wait for state to update, then navigate
       setTimeout(() => goto('/study'), 100);
       return;
