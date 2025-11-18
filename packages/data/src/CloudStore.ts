@@ -116,9 +116,7 @@ export class CloudStore implements IDataStore {
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }> {
     const now = Date.now();
 
@@ -142,33 +140,21 @@ export class CloudStore implements IDataStore {
       .select('word_id, words!inner(deck_id)', { count: 'exact', head: true })
       .eq('words.deck_id', deckId)
       .lte('due_ts', now)
-      .eq('is_new', 0);
+      .eq('is_new', 0)
+      .eq('is_mastered', 0);
 
-    // Learning words (interval < 21 days)
-    const { count: learning } = await this.supabase
+    // Mastered words
+    const { count: mastered } = await this.supabase
       .from('scheduling')
       .select('word_id, words!inner(deck_id)', { count: 'exact', head: true })
       .eq('words.deck_id', deckId)
-      .gt('interval', 0)
-      .lt('interval', 21);
-
-    // Leeches (lapses >= 8)
-    const { count: leeches } = await this.supabase
-      .from('scheduling')
-      .select('word_id, words!inner(deck_id)', { count: 'exact', head: true })
-      .eq('words.deck_id', deckId)
-      .gte('lapses', 8);
-
-    const retention =
-      total && total > 0 ? Math.round(((total - (newCount || 0) - (leeches || 0)) / total) * 100) : 0;
+      .eq('is_mastered', 1);
 
     return {
       total: total || 0,
       new: newCount || 0,
       due: due || 0,
-      learning: learning || 0,
-      retention,
-      leeches: leeches || 0,
+      mastered: mastered || 0,
     };
   }
 
@@ -387,18 +373,6 @@ export class CloudStore implements IDataStore {
     return data.map((row) => this.mapRowToWordWithScheduling(row));
   }
 
-  async getLeeches(deckId: string, threshold: number): Promise<WordWithScheduling[]> {
-    const { data, error } = await this.supabase
-      .from('scheduling')
-      .select('*, words!inner(*)')
-      .eq('words.deck_id', deckId)
-      .gte('lapses', threshold)
-      .order('lapses', { ascending: false });
-
-    if (error) throw new Error(`Failed to get leeches: ${error.message}`);
-
-    return data.map((row) => this.mapRowToWordWithScheduling(row));
-  }
 
   // ========================================================================
   // Scope Queries
@@ -464,25 +438,6 @@ export class CloudStore implements IDataStore {
     return data.map((row) => this.mapRowToWordWithScheduling(row));
   }
 
-  async getLeechesByScope(
-    scope: StudyScope,
-    currentDeckId: string,
-    threshold: number
-  ): Promise<WordWithScheduling[]> {
-    const deckIds = await this.resolveScopeDeckIds(scope, currentDeckId);
-    if (deckIds.length === 0) return [];
-
-    const { data, error } = await this.supabase
-      .from('scheduling')
-      .select('*, words!inner(*)')
-      .in('words.deck_id', deckIds)
-      .gte('lapses', threshold)
-      .order('lapses', { ascending: false });
-
-    if (error) throw new Error(`Failed to get leeches by scope: ${error.message}`);
-
-    return data.map((row) => this.mapRowToWordWithScheduling(row));
-  }
 
   async getAllWordsByScope(
     scope: StudyScope,
@@ -512,13 +467,11 @@ export class CloudStore implements IDataStore {
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }> {
     const deckIds = await this.resolveScopeDeckIds(scope, currentDeckId);
     if (deckIds.length === 0) {
-      return { total: 0, new: 0, due: 0, learning: 0, retention: 0, leeches: 0 };
+      return { total: 0, new: 0, due: 0, mastered: 0 };
     }
 
     const now = Date.now();
@@ -543,33 +496,21 @@ export class CloudStore implements IDataStore {
       .select('word_id, words!inner(deck_id)', { count: 'exact', head: true })
       .in('words.deck_id', deckIds)
       .lte('due_ts', now)
-      .eq('is_new', 0);
+      .eq('is_new', 0)
+      .eq('is_mastered', 0);
 
-    // Learning words
-    const { count: learning } = await this.supabase
+    // Mastered words
+    const { count: mastered } = await this.supabase
       .from('scheduling')
       .select('word_id, words!inner(deck_id)', { count: 'exact', head: true })
       .in('words.deck_id', deckIds)
-      .gt('interval', 0)
-      .lt('interval', 21);
-
-    // Leeches
-    const { count: leeches } = await this.supabase
-      .from('scheduling')
-      .select('word_id, words!inner(deck_id)', { count: 'exact', head: true })
-      .in('words.deck_id', deckIds)
-      .gte('lapses', 8);
-
-    const retention =
-      total && total > 0 ? Math.round(((total - (newCount || 0) - (leeches || 0)) / total) * 100) : 0;
+      .eq('is_mastered', 1);
 
     return {
       total: total || 0,
       new: newCount || 0,
       due: due || 0,
-      learning: learning || 0,
-      retention,
-      leeches: leeches || 0,
+      mastered: mastered || 0,
     };
   }
 
@@ -648,10 +589,11 @@ export class CloudStore implements IDataStore {
   async getStats(): Promise<{
     total: number;
     new: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    due: number;
+    mastered: number;
   }> {
+    const now = Date.now();
+
     // Get stats across all user's decks
     const { count: total } = await this.supabase
       .from('words')
@@ -663,26 +605,23 @@ export class CloudStore implements IDataStore {
       .select('*', { count: 'exact', head: true })
       .eq('is_new', 1);
 
-    const { count: learning } = await this.supabase
+    const { count: due } = await this.supabase
       .from('scheduling')
       .select('*', { count: 'exact', head: true })
-      .gt('interval', 0)
-      .lt('interval', 21);
+      .lte('due_ts', now)
+      .eq('is_new', 0)
+      .eq('is_mastered', 0);
 
-    const { count: leeches } = await this.supabase
+    const { count: mastered } = await this.supabase
       .from('scheduling')
       .select('*', { count: 'exact', head: true })
-      .gte('lapses', 8);
-
-    const retention =
-      total && total > 0 ? Math.round(((total - (newCount || 0) - (leeches || 0)) / total) * 100) : 0;
+      .eq('is_mastered', 1);
 
     return {
       total: total || 0,
       new: newCount || 0,
-      learning: learning || 0,
-      retention,
-      leeches: leeches || 0,
+      due: due || 0,
+      mastered: mastered || 0,
     };
   }
 

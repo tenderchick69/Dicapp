@@ -111,9 +111,7 @@ export class SqliteStore implements IDataStore {
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }> {
     if (!this.db) throw new Error('Database not initialized');
 
@@ -127,19 +125,11 @@ export class SqliteStore implements IDataStore {
       [deckId]
     );
     const [dueRow] = await this.db.select<{ count: number }>(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.due_ts <= ? AND s.is_new = 0',
+      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.due_ts <= ? AND s.is_new = 0 AND s.is_mastered = 0',
       [deckId, now]
     );
-    const [learningRow] = await this.db.select<{ count: number }>(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.is_new = 0 AND s.interval < 7',
-      [deckId]
-    );
-    const [retentionRow] = await this.db.select<{ count: number }>(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.is_new = 0 AND s.interval >= 7 AND s.lapses < 8',
-      [deckId]
-    );
-    const [leechesRow] = await this.db.select<{ count: number }>(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.lapses >= 8',
+    const [masteredRow] = await this.db.select<{ count: number }>(
+      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.is_mastered = 1',
       [deckId]
     );
 
@@ -147,9 +137,7 @@ export class SqliteStore implements IDataStore {
       total: totalRow?.count || 0,
       new: newRow?.count || 0,
       due: dueRow?.count || 0,
-      learning: learningRow?.count || 0,
-      retention: retentionRow?.count || 0,
-      leeches: leechesRow?.count || 0,
+      mastered: masteredRow?.count || 0,
     };
   }
 
@@ -343,20 +331,6 @@ export class SqliteStore implements IDataStore {
     return rows.map((row) => this.mapRowToWordWithScheduling(row));
   }
 
-  async getLeeches(deckId: string, threshold: number): Promise<WordWithScheduling[]> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
-       FROM words w
-       INNER JOIN scheduling s ON w.id = s.word_id
-       WHERE w.deck_id = ? AND s.lapses >= ?
-       ORDER BY s.lapses DESC`,
-      [deckId, threshold]
-    );
-
-    return rows.map((row) => this.mapRowToWordWithScheduling(row));
-  }
 
   // === Scope Queries (Multi-Deck) ===
 
@@ -422,42 +396,18 @@ export class SqliteStore implements IDataStore {
     return rows.map((row) => this.mapRowToWordWithScheduling(row));
   }
 
-  async getLeechesByScope(
-    scope: StudyScope,
-    currentDeckId: string,
-    threshold: number
-  ): Promise<WordWithScheduling[]> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const deckIds = await this.resolveScopeDeckIds(scope, currentDeckId);
-    if (deckIds.length === 0) return [];
-
-    const placeholders = deckIds.map(() => '?').join(',');
-    const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
-       FROM words w
-       INNER JOIN scheduling s ON w.id = s.word_id
-       WHERE w.deck_id IN (${placeholders}) AND s.lapses >= ?
-       ORDER BY s.lapses DESC`,
-      [...deckIds, threshold]
-    );
-
-    return rows.map((row) => this.mapRowToWordWithScheduling(row));
-  }
 
   async getStatsByScope(scope: StudyScope, currentDeckId: string): Promise<{
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }> {
     if (!this.db) throw new Error('Database not initialized');
 
     const deckIds = await this.resolveScopeDeckIds(scope, currentDeckId);
     if (deckIds.length === 0) {
-      return { total: 0, new: 0, due: 0, learning: 0, retention: 0, leeches: 0 };
+      return { total: 0, new: 0, due: 0, mastered: 0 };
     }
 
     const placeholders = deckIds.map(() => '?').join(',');
@@ -478,27 +428,18 @@ export class SqliteStore implements IDataStore {
     const due = (await this.db.select<{ count: number }>(
       `SELECT COUNT(*) as count FROM scheduling s
        INNER JOIN words w ON s.word_id = w.id
-       WHERE w.deck_id IN (${placeholders}) AND s.due_ts <= ? AND s.is_new = 0`,
+       WHERE w.deck_id IN (${placeholders}) AND s.due_ts <= ? AND s.is_new = 0 AND s.is_mastered = 0`,
       [...deckIds, now]
     ))[0].count;
 
-    const learning = (await this.db.select<{ count: number }>(
+    const mastered = (await this.db.select<{ count: number }>(
       `SELECT COUNT(*) as count FROM scheduling s
        INNER JOIN words w ON s.word_id = w.id
-       WHERE w.deck_id IN (${placeholders}) AND s.interval > 0 AND s.interval < 21`,
+       WHERE w.deck_id IN (${placeholders}) AND s.is_mastered = 1`,
       deckIds
     ))[0].count;
 
-    const leeches = (await this.db.select<{ count: number }>(
-      `SELECT COUNT(*) as count FROM scheduling s
-       INNER JOIN words w ON s.word_id = w.id
-       WHERE w.deck_id IN (${placeholders}) AND s.lapses >= 8`,
-      deckIds
-    ))[0].count;
-
-    const retention = total > 0 ? Math.round(((total - newCount - leeches) / total) * 100) : 0;
-
-    return { total, new: newCount, due, learning, retention, leeches };
+    return { total, new: newCount, due, mastered };
   }
 
   async getAllWordsByScope(scope: StudyScope, currentDeckId: string, limit: number): Promise<WordWithScheduling[]> {
@@ -568,30 +509,28 @@ export class SqliteStore implements IDataStore {
   async getStats(): Promise<{
     total: number;
     new: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    due: number;
+    mastered: number;
   }> {
     if (!this.db) throw new Error('Database not initialized');
 
-    const [totalRow, newRow, learningRow, retentionRow, leechesRow] = await Promise.all([
+    const now = Date.now();
+
+    const [totalRow, newRow, dueRow, masteredRow] = await Promise.all([
       this.db.select<{ count: number }>('SELECT COUNT(*) as count FROM words'),
       this.db.select<{ count: number }>('SELECT COUNT(*) as count FROM scheduling WHERE is_new = 1'),
       this.db.select<{ count: number }>(
-        'SELECT COUNT(*) as count FROM scheduling WHERE is_new = 0 AND interval < 7'
+        'SELECT COUNT(*) as count FROM scheduling WHERE due_ts <= ? AND is_new = 0 AND is_mastered = 0',
+        [now]
       ),
-      this.db.select<{ count: number }>(
-        'SELECT COUNT(*) as count FROM scheduling WHERE is_new = 0 AND interval >= 7 AND lapses < 8'
-      ),
-      this.db.select<{ count: number }>('SELECT COUNT(*) as count FROM scheduling WHERE lapses >= 8'),
+      this.db.select<{ count: number }>('SELECT COUNT(*) as count FROM scheduling WHERE is_mastered = 1'),
     ]);
 
     return {
       total: totalRow[0]?.count || 0,
       new: newRow[0]?.count || 0,
-      learning: learningRow[0]?.count || 0,
-      retention: retentionRow[0]?.count || 0,
-      leeches: leechesRow[0]?.count || 0,
+      due: dueRow[0]?.count || 0,
+      mastered: masteredRow[0]?.count || 0,
     };
   }
 

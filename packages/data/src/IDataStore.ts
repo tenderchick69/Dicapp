@@ -21,9 +21,7 @@ export interface IDataStore {
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }>;
 
   // === Words ===
@@ -56,10 +54,6 @@ export interface IDataStore {
    */
   getNew(deckId: string, limit: number): Promise<WordWithScheduling[]>;
 
-  /**
-   * Get leeches (lapses >= threshold)
-   */
-  getLeeches(deckId: string, threshold: number): Promise<WordWithScheduling[]>;
 
   // === Scope Queries (Multi-Deck) ===
 
@@ -74,20 +68,13 @@ export interface IDataStore {
   getNewByScope(scope: StudyScope, currentDeckId: string, limit: number): Promise<WordWithScheduling[]>;
 
   /**
-   * Get leeches by scope
-   */
-  getLeechesByScope(scope: StudyScope, currentDeckId: string, threshold: number): Promise<WordWithScheduling[]>;
-
-  /**
    * Get stats by scope
    */
   getStatsByScope(scope: StudyScope, currentDeckId: string): Promise<{
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }>;
 
   /**
@@ -110,9 +97,8 @@ export interface IDataStore {
   getStats(): Promise<{
     total: number;
     new: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    due: number;
+    mastered: number;
   }>;
 
   // === Export ===

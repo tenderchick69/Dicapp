@@ -176,9 +176,7 @@ export class WasmSqliteStore implements IDataStore {
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }> {
     const now = Date.now();
     const [totalRow] = this.exec('SELECT COUNT(*) as count FROM words WHERE deck_id = ?', [deckId]);
@@ -187,19 +185,11 @@ export class WasmSqliteStore implements IDataStore {
       [deckId]
     );
     const [dueRow] = this.exec(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.due_ts <= ? AND s.is_new = 0',
+      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.due_ts <= ? AND s.is_new = 0 AND s.is_mastered = 0',
       [deckId, now]
     );
-    const [learningRow] = this.exec(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.is_new = 0 AND s.interval < 7',
-      [deckId]
-    );
-    const [retentionRow] = this.exec(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.is_new = 0 AND s.interval >= 7 AND s.lapses < 8',
-      [deckId]
-    );
-    const [leechesRow] = this.exec(
-      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.lapses >= 8',
+    const [masteredRow] = this.exec(
+      'SELECT COUNT(*) as count FROM words w JOIN scheduling s ON w.id = s.word_id WHERE w.deck_id = ? AND s.is_mastered = 1',
       [deckId]
     );
 
@@ -207,9 +197,7 @@ export class WasmSqliteStore implements IDataStore {
       total: totalRow?.count || 0,
       new: newRow?.count || 0,
       due: dueRow?.count || 0,
-      learning: learningRow?.count || 0,
-      retention: retentionRow?.count || 0,
-      leeches: leechesRow?.count || 0,
+      mastered: masteredRow?.count || 0,
     };
   }
 
@@ -379,18 +367,6 @@ export class WasmSqliteStore implements IDataStore {
     return rows.map((row) => this.mapRowToWordWithScheduling(row));
   }
 
-  async getLeeches(deckId: string, threshold: number): Promise<WordWithScheduling[]> {
-    const rows = this.exec(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
-       FROM words w
-       INNER JOIN scheduling s ON w.id = s.word_id
-       WHERE w.deck_id = ? AND s.lapses >= ?
-       ORDER BY s.lapses DESC`,
-      [deckId, threshold]
-    );
-
-    return rows.map((row) => this.mapRowToWordWithScheduling(row));
-  }
 
   // === Scope Queries (Multi-Deck) ===
 
@@ -450,38 +426,16 @@ export class WasmSqliteStore implements IDataStore {
     return rows.map((row) => this.mapRowToWordWithScheduling(row));
   }
 
-  async getLeechesByScope(
-    scope: StudyScope,
-    currentDeckId: string,
-    threshold: number
-  ): Promise<WordWithScheduling[]> {
-    const deckIds = this.resolveScopeDeckIds(scope, currentDeckId);
-    if (deckIds.length === 0) return [];
-
-    const placeholders = deckIds.map(() => '?').join(',');
-    const rows = this.exec(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
-       FROM words w
-       INNER JOIN scheduling s ON w.id = s.word_id
-       WHERE w.deck_id IN (${placeholders}) AND s.lapses >= ?
-       ORDER BY s.lapses DESC`,
-      [...deckIds, threshold]
-    );
-
-    return rows.map((row) => this.mapRowToWordWithScheduling(row));
-  }
 
   async getStatsByScope(scope: StudyScope, currentDeckId: string): Promise<{
     total: number;
     new: number;
     due: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    mastered: number;
   }> {
     const deckIds = this.resolveScopeDeckIds(scope, currentDeckId);
     if (deckIds.length === 0) {
-      return { total: 0, new: 0, due: 0, learning: 0, retention: 0, leeches: 0 };
+      return { total: 0, new: 0, due: 0, mastered: 0 };
     }
 
     const placeholders = deckIds.map(() => '?').join(',');
@@ -502,27 +456,18 @@ export class WasmSqliteStore implements IDataStore {
     const due = this.exec(
       `SELECT COUNT(*) as count FROM scheduling s
        INNER JOIN words w ON s.word_id = w.id
-       WHERE w.deck_id IN (${placeholders}) AND s.due_ts <= ? AND s.is_new = 0`,
+       WHERE w.deck_id IN (${placeholders}) AND s.due_ts <= ? AND s.is_new = 0 AND s.is_mastered = 0`,
       [...deckIds, now]
     )[0].count as number;
 
-    const learning = this.exec(
+    const mastered = this.exec(
       `SELECT COUNT(*) as count FROM scheduling s
        INNER JOIN words w ON s.word_id = w.id
-       WHERE w.deck_id IN (${placeholders}) AND s.interval > 0 AND s.interval < 21`,
+       WHERE w.deck_id IN (${placeholders}) AND s.is_mastered = 1`,
       deckIds
     )[0].count as number;
 
-    const leeches = this.exec(
-      `SELECT COUNT(*) as count FROM scheduling s
-       INNER JOIN words w ON s.word_id = w.id
-       WHERE w.deck_id IN (${placeholders}) AND s.lapses >= 8`,
-      deckIds
-    )[0].count as number;
-
-    const retention = total > 0 ? Math.round(((total - newCount - leeches) / total) * 100) : 0;
-
-    return { total, new: newCount, due, learning, retention, leeches };
+    return { total, new: newCount, due, mastered };
   }
 
   async getAllWordsByScope(scope: StudyScope, currentDeckId: string, limit: number): Promise<WordWithScheduling[]> {
@@ -585,26 +530,24 @@ export class WasmSqliteStore implements IDataStore {
   async getStats(): Promise<{
     total: number;
     new: number;
-    learning: number;
-    retention: number;
-    leeches: number;
+    due: number;
+    mastered: number;
   }> {
+    const now = Date.now();
+
     const [totalRow] = this.exec('SELECT COUNT(*) as count FROM words');
     const [newRow] = this.exec('SELECT COUNT(*) as count FROM scheduling WHERE is_new = 1');
-    const [learningRow] = this.exec(
-      'SELECT COUNT(*) as count FROM scheduling WHERE is_new = 0 AND interval < 7'
+    const [dueRow] = this.exec(
+      'SELECT COUNT(*) as count FROM scheduling WHERE due_ts <= ? AND is_new = 0 AND is_mastered = 0',
+      [now]
     );
-    const [retentionRow] = this.exec(
-      'SELECT COUNT(*) as count FROM scheduling WHERE is_new = 0 AND interval >= 7 AND lapses < 8'
-    );
-    const [leechesRow] = this.exec('SELECT COUNT(*) as count FROM scheduling WHERE lapses >= 8');
+    const [masteredRow] = this.exec('SELECT COUNT(*) as count FROM scheduling WHERE is_mastered = 1');
 
     return {
       total: totalRow?.count || 0,
       new: newRow?.count || 0,
-      learning: learningRow?.count || 0,
-      retention: retentionRow?.count || 0,
-      leeches: leechesRow?.count || 0,
+      due: dueRow?.count || 0,
+      mastered: masteredRow?.count || 0,
     };
   }
 

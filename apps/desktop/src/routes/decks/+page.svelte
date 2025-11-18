@@ -14,9 +14,7 @@
       total: number;
       new: number;
       due: number;
-      learning: number;
-      retention: number;
-      leeches: number;
+      mastered: number;
     };
   }
 
@@ -328,15 +326,15 @@
                   <div class="text-xs" style="color: var(--muted)">New</div>
                 </div>
                 <div class="text-center">
-                  <div class="text-2xl font-bold" style="color: var(--danger)">
-                    {deck.stats.leeches}
+                  <div class="text-2xl font-bold" style="color: var(--fg); opacity: 0.5">
+                    {deck.stats.mastered}
                   </div>
-                  <div class="text-xs" style="color: var(--muted)">Leeches</div>
+                  <div class="text-xs" style="color: var(--muted)">Mastered</div>
                 </div>
               </div>
 
-              <div class="mt-3 text-center text-sm" style="color: var(--muted)">
-                {deck.stats.total} total · {deck.stats.learning} learning · {deck.stats.retention} retention
+              <div class="mt-3 text-center text-sm" style="color: var(--muted); opacity: 0.7">
+                {deck.stats.total} total cards
               </div>
             </div>
 
