@@ -7,6 +7,7 @@
   import { deckStore } from '$lib/stores/deck';
   import { scopeStore } from '$lib/stores/scope';
   import { authStore } from '$lib/stores/auth';
+  import { studyStore } from '$lib/stores/study';
   import Header from '$lib/components/Header.svelte';
   import { Compass, LogIn } from 'lucide-svelte';
 
@@ -51,6 +52,9 @@
   }
 
   onMount(async () => {
+    // Force fresh start – fixes stuck state
+    studyStore.endSession();
+
     // Force reload all load functions on navigation
     await invalidateAll();
 
