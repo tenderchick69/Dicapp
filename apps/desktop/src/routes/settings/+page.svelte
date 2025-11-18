@@ -141,39 +141,6 @@
               </label>
             </div>
           </div>
-
-          <!-- Learning Reveal Policy -->
-          <div>
-            <label class="block text-sm font-medium mb-2">Learning Reveal Policy</label>
-            <div class="space-y-2">
-              <label class="flex items-center gap-3 p-3 rounded cursor-pointer hover:bg-opacity-50" style="background: rgba(191, 167, 106, 0.05)">
-                <input
-                  type="radio"
-                  bind:group={$settingsStore.learningReveal}
-                  value="minimal"
-                  class="w-4 h-4"
-                  style="accent-color: var(--accent-1)"
-                />
-                <div>
-                  <div class="font-semibold">Minimal (Recall-first)</div>
-                  <div class="text-xs" style="color: var(--muted)">Hide answer until reveal, even for new cards</div>
-                </div>
-              </label>
-              <label class="flex items-center gap-3 p-3 rounded cursor-pointer hover:bg-opacity-50" style="background: rgba(191, 167, 106, 0.05)">
-                <input
-                  type="radio"
-                  bind:group={$settingsStore.learningReveal}
-                  value="rich"
-                  class="w-4 h-4"
-                  style="accent-color: var(--accent-1)"
-                />
-                <div>
-                  <div class="font-semibold">Rich (Study-first)</div>
-                  <div class="text-xs" style="color: var(--muted)">Show full details on new cards for learning</div>
-                </div>
-              </label>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -206,21 +173,8 @@
               bind:value={$settingsStore.dueLimit}
               class="w-full"
             />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">
-              Leech Threshold: {$settingsStore.leechThreshold}
-            </label>
-            <input
-              type="range"
-              min="3"
-              max="20"
-              bind:value={$settingsStore.leechThreshold}
-              class="w-full"
-            />
             <p class="text-xs mt-1" style="color: var(--muted)">
-              Cards with this many lapses are marked as leeches
+              Maximum number of due cards per session
             </p>
           </div>
 
@@ -264,9 +218,9 @@
       <!-- About -->
       <div class="p-6 rounded-lg text-center" style="background: var(--card-bg); border: 1px solid var(--card-border)">
         <h2 class="font-display text-2xl font-bold mb-2" style="color: var(--accent-1)">RuneDeck</h2>
-        <p class="text-sm" style="color: var(--muted)">Version 1.0.0 "Tent MVP"</p>
+        <p class="text-sm" style="color: var(--muted)">Version 2.0.0 "Zen Ladder"</p>
         <p class="text-xs mt-2" style="color: var(--muted); opacity: 0.7">
-          Advanced vocabulary training with SM-2 spaced repetition
+          Progressive vocabulary mastery through serene repetition
         </p>
       </div>
     </div>
