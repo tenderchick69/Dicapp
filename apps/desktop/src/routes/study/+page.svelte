@@ -53,10 +53,6 @@
         return;
       }
 
-      console.log('ZEN DEBUG – raw queue from buildQueueByScope:', cards);
-      console.log('ZEN DEBUG – first card word:', cards[0]?.word);
-      console.log('ZEN DEBUG – first card scheduling:', cards[0]?.scheduling);
-
       studyStore.startSession(cards);
       loading = false;
 
@@ -99,18 +95,21 @@
     if (!$studyStore.currentCard?.word) return;
 
     const card = $studyStore.currentCard;
-    const wasNotMastered = card.scheduling?.is_mastered === 0;
+    const oldCorrect = card.scheduling.times_correct ?? 0;
+    const wasMastered = card.scheduling.is_mastered === 1;
 
     await studyStore.gradeCardZen(card.word.id, gotIt);
 
-    // Check if reached mastery
-    if (gotIt && wasNotMastered && $studyStore.currentCard?.scheduling?.is_mastered === 1) {
+    const newCorrect = $studyStore.currentCard?.scheduling.times_correct ?? oldCorrect;
+
+    // Only celebrate if we just reached mastery (4 → 5)
+    if (gotIt && newCorrect >= 5 && oldCorrect < 5 && !wasMastered) {
       celebrating = true;
       setTimeout(() => {
         celebrating = false;
         showBack = false;
         studyStore.nextCard();
-      }, 3000);
+      }, 2800);
     } else {
       showBack = false;
       studyStore.nextCard();
@@ -125,7 +124,6 @@
   // Graceful session end: redirect home when session inactive or queue empty
   $: if (!loading && (!$studyStore.sessionActive || $studyStore.currentCard === null)) {
     if ($studyStore.sessionActive && $studyStore.currentCard === null) {
-      console.log('ZEN DEBUG – Queue empty, ending session and returning home');
       studyStore.endSession();
     }
     goto('/');
