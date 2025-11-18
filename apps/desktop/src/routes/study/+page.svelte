@@ -55,16 +55,12 @@
 
       studyStore.startSession(cards);
 
-      // ZEN FINAL AUDIT - trace queue at session start
-      console.log('%c ZEN FINAL AUDIT — queue at session start', 'color:cyan;font-size:16px');
-      cards.forEach((c, i) => {
-        console.log(`Card ${i}:`, {
-          headword: c.word.headword,
-          times_correct: c.scheduling.times_correct,
-          is_mastered: c.scheduling.is_mastered,
-          due_ts: new Date(c.scheduling.due_ts).toISOString()
-        });
-      });
+      // ZEN FORENSIC AUDIT - these MUST all be 0
+      console.log('%c ZEN SESSION START — THESE MUST ALL BE 0', 'color:lime;font-size:24px;background:black', cards.map(c => ({
+        headword: c.word.headword,
+        times_correct: c.scheduling.times_correct,
+        is_mastered: c.scheduling.is_mastered
+      })));
 
       loading = false;
 

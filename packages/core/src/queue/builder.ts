@@ -62,8 +62,27 @@ export async function buildQueueByScope(
     store.getNewByScope(scope, currentDeckId, newPerDay),
   ]);
 
+  // FORENSIC: Log raw input from database
+  console.log('%c QUEUE BUILD RAW INPUT - DUE', 'color:red;font-size:20px', due.map(c => ({
+    headword: c.word.headword,
+    times_correct: c.scheduling.times_correct,
+    is_mastered: c.scheduling.is_mastered
+  })));
+  console.log('%c QUEUE BUILD RAW INPUT - NEW', 'color:red;font-size:20px', fresh.map(c => ({
+    headword: c.word.headword,
+    times_correct: c.scheduling.times_correct,
+    is_mastered: c.scheduling.is_mastered
+  })));
+
   // Combine due and new cards
   const cards = [...due, ...fresh];
+
+  // FORENSIC: Log final queue
+  console.log('%c FINAL QUEUE BEFORE STUDY', 'color:red;font-size:20px', cards.map(c => ({
+    headword: c.word.headword,
+    times_correct: c.scheduling.times_correct,
+    is_mastered: c.scheduling.is_mastered
+  })));
 
   return { cards };
 }
