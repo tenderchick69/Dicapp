@@ -1,100 +1,93 @@
-import { writable, derived } from 'svelte/store';
+import { writable } from 'svelte/store';
 import { getDataStore } from './database';
 import { gradeCardZen } from '@runedeck/core/scheduler';
 import { uuid } from '@runedeck/core/models';
 import type { WordWithScheduling } from '@runedeck/core/models';
 
+/**
+ * Minimal study store - no complexity, no hidden state
+ */
 interface StudyState {
-  sessionActive: boolean;
   cards: WordWithScheduling[];
-  currentIndex: number;
-  currentCard: WordWithScheduling | null;
+  index: number;
 }
 
-function createStudyStore() {
-  const { subscribe, set, update } = writable<StudyState>({
-    sessionActive: false,
-    cards: [],
-    currentIndex: 0,
-    currentCard: null,
-  });
+const initial: StudyState = { cards: [], index: 0 };
+const { subscribe, set, update } = writable<StudyState>(initial);
 
-  return {
-    subscribe,
-    startSession: (cards: WordWithScheduling[]) => {
-      set({
-        sessionActive: true,
-        cards,
-        currentIndex: 0,
-        currentCard: cards[0] || null,
-      });
-    },
-    nextCard: () => {
-      update((state) => {
-        const nextIndex = state.currentIndex + 1;
-        const nextCard = state.cards[nextIndex] || null;
-        return {
-          ...state,
-          currentIndex: nextIndex,
-          currentCard: nextCard,
-        };
-      });
-    },
-    async gradeCardZen(cardId: string, gotIt: boolean) {
-      const state = await new Promise<StudyState>((resolve) => {
-        subscribe((s) => resolve(s))();
-      });
+export const studyStore = {
+  subscribe,
 
-      if (!state.currentCard) return;
+  start(cards: WordWithScheduling[]) {
+    // Force all cards to start at 0 - trust nothing
+    const cleanCards = cards.map(c => ({
+      ...c,
+      scheduling: {
+        ...c.scheduling,
+        times_correct: c.scheduling.times_correct ?? 0,
+        is_mastered: c.scheduling.is_mastered ?? 0,
+      }
+    }));
+    set({ cards: cleanCards, index: 0 });
+  },
 
-      // Null guards - ensure zen fields are never null before grading
-      const scheduling = state.currentCard.scheduling;
-      if (scheduling.times_correct == null) scheduling.times_correct = 0;
-      if (scheduling.is_mastered == null) scheduling.is_mastered = 0;
+  current(): WordWithScheduling | null {
+    let result: WordWithScheduling | null = null;
+    subscribe(s => {
+      result = s.cards[s.index] || null;
+    })();
+    return result;
+  },
 
-      const dataStore = await getDataStore();
-      const newScheduling = gradeCardZen(scheduling, gotIt);
+  async grade(gotIt: boolean): Promise<{ oldCorrect: number; newCorrect: number }> {
+    let oldCorrect = 0;
+    let newCorrect = 0;
 
-      await dataStore.upsertScheduling(newScheduling);
-      await dataStore.addReview({
-        id: uuid(),
-        word_id: cardId,
-        ts: Date.now(),
-        grade: gotIt ? 2 : 1,
-        elapsed_ms: 1000,
-      });
+    const state = await new Promise<StudyState>(resolve => {
+      subscribe(s => resolve(s))();
+    });
 
-      // Update current card with new scheduling
-      update((s) => ({
-        ...s,
-        currentCard: s.currentCard ? {
-          ...s.currentCard,
-          scheduling: newScheduling,
-        } : null,
-      }));
-    },
-    endSession: () => {
-      set({
-        sessionActive: false,
-        cards: [],
-        currentIndex: 0,
-        currentCard: null,
-      });
-    },
-    reset: () => {
-      set({
-        sessionActive: false,
-        cards: [],
-        currentIndex: 0,
-        currentCard: null,
-      });
-    },
-  };
-}
+    const card = state.cards[state.index];
+    if (!card) return { oldCorrect: 0, newCorrect: 0 };
 
-export const studyStore = createStudyStore();
+    oldCorrect = card.scheduling.times_correct ?? 0;
 
-export const isComplete = derived(
-  studyStore,
-  ($study) => !$study.sessionActive || $study.currentCard === null
-);
+    const dataStore = await getDataStore();
+    const newScheduling = gradeCardZen(card.scheduling, gotIt);
+    newCorrect = newScheduling.times_correct ?? 0;
+
+    await dataStore.upsertScheduling(newScheduling);
+    await dataStore.addReview({
+      id: uuid(),
+      word_id: card.word.id,
+      ts: Date.now(),
+      grade: gotIt ? 2 : 1,
+      elapsed_ms: 1000,
+    });
+
+    // Update card in place
+    update(s => {
+      const updated = [...s.cards];
+      updated[s.index] = { ...card, scheduling: newScheduling };
+      return { ...s, cards: updated };
+    });
+
+    return { oldCorrect, newCorrect };
+  },
+
+  next() {
+    update(s => ({ ...s, index: s.index + 1 }));
+  },
+
+  end() {
+    set(initial);
+  },
+
+  isActive(): boolean {
+    let active = false;
+    subscribe(s => {
+      active = s.cards.length > 0 && s.index < s.cards.length;
+    })();
+    return active;
+  },
+};

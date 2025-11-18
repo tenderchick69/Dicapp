@@ -17,6 +17,10 @@
   let showBack = false;
   let celebrating = false;
 
+  // Reactive current card from store
+  $: currentCard = $studyStore.cards[$studyStore.index] || null;
+  $: isActive = $studyStore.cards.length > 0 && $studyStore.index < $studyStore.cards.length;
+
   onMount(async () => {
     try {
       // Load deck and build queue
@@ -53,7 +57,7 @@
         return;
       }
 
-      studyStore.startSession(cards);
+      studyStore.start(cards);
 
       // ZEN FORENSIC AUDIT - these MUST all be 0
       console.log('%c ZEN SESSION START — THESE MUST ALL BE 0', 'color:lime;font-size:24px;background:black', cards.map(c => ({
@@ -100,27 +104,19 @@
   }
 
   async function grade(gotIt: boolean) {
-    if (!$studyStore.currentCard?.word) return;
+    if (!currentCard?.word) return;
 
-    const card = $studyStore.currentCard;
-
-    // Null guards - ensure zen fields are never null
-    if (card.scheduling.times_correct == null) card.scheduling.times_correct = 0;
-    if (card.scheduling.is_mastered == null) card.scheduling.is_mastered = 0;
-
-    const oldCorrect = card.scheduling.times_correct;
-    const wasMastered = card.scheduling.is_mastered === 1;
+    const oldCorrect = currentCard.scheduling.times_correct ?? 0;
+    const wasMastered = currentCard.scheduling.is_mastered === 1;
 
     console.log('%c GRADE START', 'color:yellow', {
-      headword: card.word.headword,
+      headword: currentCard.word.headword,
       oldCorrect,
       wasMastered,
       gotIt
     });
 
-    await studyStore.gradeCardZen(card.word.id, gotIt);
-
-    const newCorrect = $studyStore.currentCard?.scheduling.times_correct ?? oldCorrect;
+    const { newCorrect } = await studyStore.grade(gotIt);
 
     console.log('%c GRADE END', 'color:green', {
       newCorrect,
@@ -133,24 +129,21 @@
       setTimeout(() => {
         celebrating = false;
         showBack = false;
-        studyStore.nextCard();
+        studyStore.next();
       }, 2800);
     } else {
       showBack = false;
-      studyStore.nextCard();
+      studyStore.next();
     }
   }
 
   function exit() {
-    studyStore.endSession();
+    studyStore.end();
     goto('/');
   }
 
   // Graceful session end: redirect home when session inactive or queue empty
-  $: if (!loading && (!$studyStore.sessionActive || $studyStore.currentCard === null)) {
-    if ($studyStore.sessionActive && $studyStore.currentCard === null) {
-      studyStore.endSession();
-    }
+  $: if (!loading && !isActive) {
     goto('/');
   }
 </script>
@@ -168,27 +161,27 @@
       <p>{error}</p>
       <button on:click={exit}>Return Home</button>
     </div>
-  {:else if $studyStore.currentCard}
+  {:else if currentCard}
     <MasteryCelebration active={celebrating} />
 
     <div class="card-area">
-      <CardLevel level={$studyStore.currentCard?.scheduling?.times_correct ?? 0}>
+      <CardLevel level={currentCard.scheduling?.times_correct ?? 0}>
         <div class="card">
           <div class="card-front">
-            <h1 class="headword">{$studyStore.currentCard?.word?.headword ?? 'Loading...'}</h1>
-            {#if $studyStore.currentCard?.word?.ipa}
-              <p class="ipa">{$studyStore.currentCard.word.ipa}</p>
+            <h1 class="headword">{currentCard.word?.headword ?? 'Loading...'}</h1>
+            {#if currentCard.word?.ipa}
+              <p class="ipa">{currentCard.word.ipa}</p>
             {/if}
           </div>
 
           {#if showBack}
             <div class="card-back">
-              <p class="definition">{$studyStore.currentCard?.word?.definition ?? ''}</p>
-              {#if $studyStore.currentCard?.word?.example}
-                <p class="example">{$studyStore.currentCard.word.example}</p>
+              <p class="definition">{currentCard.word?.definition ?? ''}</p>
+              {#if currentCard.word?.example}
+                <p class="example">{currentCard.word.example}</p>
               {/if}
-              {#if $studyStore.currentCard?.word?.gloss_de}
-                <p class="gloss">{$studyStore.currentCard.word.gloss_de}</p>
+              {#if currentCard.word?.gloss_de}
+                <p class="gloss">{currentCard.word.gloss_de}</p>
               {/if}
             </div>
           {/if}
