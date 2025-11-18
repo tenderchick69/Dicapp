@@ -223,6 +223,24 @@
           Progressive vocabulary mastery through serene repetition
         </p>
       </div>
+
+      {#if import.meta.env.DEV}
+        <button
+          style="background:#991b1b; color:white; padding:1rem 2rem; margin-top:3rem; width:100%; border-radius:0.5rem; font-weight:600; cursor:pointer;"
+          on:click={async () => {
+            if (!confirm('NUKE ALL DATA? This deletes every deck, word, scheduling row – irreversible')) return;
+            const db = await getDataStore();
+            if (db.supabase) {
+              await db.supabase.from('decks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+              await db.supabase.from('words').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+              await db.supabase.from('scheduling').delete().neq('word_id', '00000000-0000-0000-0000-000000000000');
+            }
+            alert('Database nuked. Restart app.');
+            location.reload();
+          }}>
+          ⚠️ DEV: Nuke All Data ⚠️
+        </button>
+      {/if}
     </div>
   </div>
 </div>
