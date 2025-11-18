@@ -2,7 +2,8 @@ import type { IDataStore } from '../../data/src/IDataStore';
 import type { Word, SchedulingData, WordWithScheduling, StudyScope } from '../models/types';
 
 /**
- * Queue configuration
+ * Queue configuration - Zen Ladder system
+ * No leeches, no SM2 - only progressive mastery through fixed intervals
  */
 export interface QueueConfig {
   dueLimit: number;
@@ -15,7 +16,9 @@ export const DEFAULT_QUEUE_CONFIG: QueueConfig = {
 };
 
 /**
- * Queue result
+ * Queue result - Zen Ladder system
+ * Returns cards ready for study (due + new)
+ * No leech tracking - cards progress through 5 levels to mastery
  */
 export interface QueueResult {
   cards: WordWithScheduling[];

@@ -75,7 +75,9 @@
       // Add keyboard listener
       window.addEventListener('keydown', handleKeyboard);
     } catch (err: any) {
-      error = err.message;
+      // Safe error handling - no SM2 legacy errors
+      error = err.message || 'Failed to load study session';
+      console.error('Study session error:', err);
       loading = false;
     }
   });
