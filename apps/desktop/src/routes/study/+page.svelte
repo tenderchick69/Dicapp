@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
   import { studyStore, isComplete } from '$lib/stores/study';
   import { getDataStore } from '$lib/stores/database';
   import { deckStore } from '$lib/stores/deck';
@@ -23,7 +22,6 @@
   let keyboardEnabled = true;
   let dataStore: IDataStore | null = null;
   let freeStudyMode = false;
-  let practiceMode: 'new' | 'learning' | 'all' | null = null;
   let failedQueue: ScheduledWord[] = []; // Cards marked "Didn't Get It" - pushed to end
   let failCounts: Map<string, number> = new Map(); // Track fails per card this session (max 3)
   let navigatingHome = false; // Flag to prevent completion redirect when user clicks Home
@@ -44,51 +42,30 @@
 
       dataStore = await getDataStore();
 
-      // Check URL parameters for practice mode
-      const urlParams = $page.url.searchParams;
-      const mode = urlParams.get('mode');
-      const filter = urlParams.get('filter') as 'new' | 'learning' | 'all' | null;
+      // Build study queue: due + new cards (up to daily limit)
+      const config = {
+        dueLimit: $settingsStore.dueLimit,
+        newPerDay: $settingsStore.newPerDay,
+      };
 
-      let cards: ScheduledWord[] = [];
+      let result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, config);
+      let cards = result.cards;
 
-      if (mode === 'practice' && filter) {
-        // PRACTICE MODE - ignore due dates, study cards based on filter
-        practiceMode = filter;
-        cards = await buildPracticeQueue(dataStore, currentDeckId, filter);
-
-        if (cards.length === 0) {
-          error = `No ${filter} cards found in this deck.`;
-          loading = false;
-          return;
-        }
-      } else {
-        // NORMAL SRS MODE - only due cards
-        const config = {
-          dueLimit: $settingsStore.dueLimit,
-          newPerDay: $settingsStore.newPerDay,
-          leechThreshold: $settingsStore.leechThreshold,
+      // If no cards due, enable free study mode with all cards
+      if (cards.length === 0) {
+        freeStudyMode = true;
+        const freeStudyConfig = {
+          dueLimit: 10000,
+          newPerDay: 10000,
         };
 
-        let result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, config);
+        result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, freeStudyConfig);
         cards = result.cards;
 
-        // If no cards due, enable free study mode with all cards
         if (cards.length === 0) {
-          freeStudyMode = true;
-          const freeStudyConfig = {
-            dueLimit: 10000,
-            newPerDay: 10000,
-            leechThreshold: $settingsStore.leechThreshold,
-          };
-
-          result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, freeStudyConfig);
-          cards = result.cards;
-
-          if (cards.length === 0) {
-            error = 'No cards in this deck. Add some words to get started!';
-            loading = false;
-            return;
-          }
+          error = 'No cards in this deck. Add some words to get started!';
+          loading = false;
+          return;
         }
       }
 
@@ -102,22 +79,6 @@
       loading = false;
     }
   });
-
-  // Build practice queue - gets cards ignoring due dates
-  async function buildPracticeQueue(store: IDataStore, deckId: string, filter: 'new' | 'learning' | 'all'): Promise<ScheduledWord[]> {
-    if (filter === 'new') {
-      // New cards only
-      return await store.getNewByScope($scopeStore, deckId, 10000);
-    } else if (filter === 'learning') {
-      // Learning cards: interval > 0 AND interval < 21
-      // Get ALL cards (ignoring due dates), then filter for learning cards client-side
-      const allCards = await store.getAllWordsByScope($scopeStore, deckId, 10000);
-      return allCards.filter(card => card.scheduling.interval > 0 && card.scheduling.interval < 21);
-    } else {
-      // All cards - get everything regardless of due dates or new status
-      return await store.getAllWordsByScope($scopeStore, deckId, 10000);
-    }
-  }
 
   onDestroy(() => {
     window.removeEventListener('keydown', handleKeyboard);
@@ -228,21 +189,13 @@
 <Header />
 
 <div class="min-h-screen flex flex-col">
-  <!-- Practice / Free Study Mode Banner -->
-  {#if !loading && !error}
-    {#if practiceMode}
-      <div class="px-6 py-3 text-center" style="background: var(--accent-2); color: var(--bg)">
-        <p class="text-sm font-medium">
-          Practice Mode - {practiceMode === 'new' ? 'New Cards' : practiceMode === 'learning' ? 'Learning Cards' : 'All Cards'} (due dates ignored)
-        </p>
-      </div>
-    {:else if freeStudyMode}
-      <div class="px-6 py-3 text-center" style="background: var(--accent-2); color: var(--bg)">
-        <p class="text-sm font-medium">
-          Free Study Mode - No cards due, reviewing all deck cards
-        </p>
-      </div>
-    {/if}
+  <!-- Free Study Mode Banner -->
+  {#if !loading && !error && freeStudyMode}
+    <div class="px-6 py-3 text-center" style="background: var(--accent-2); color: var(--bg)">
+      <p class="text-sm font-medium">
+        Free Study Mode - No cards due, reviewing all deck cards
+      </p>
+    </div>
   {/if}
 
   <!-- Progress Header -->
