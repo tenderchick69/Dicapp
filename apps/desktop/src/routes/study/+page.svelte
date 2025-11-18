@@ -8,9 +8,9 @@
   import { scopeStore } from '$lib/stores/scope';
   import { settingsStore } from '$lib/stores/settings';
   import { buildQueueByScope } from '@runedeck/core/queue';
-  import { gradeCard, modeOf } from '@runedeck/core/scheduler';
+  import { gradeCardZen } from '@runedeck/core/scheduler';
   import { uuid } from '@runedeck/core/models';
-  import type { Grade, ScheduledWord } from '@runedeck/core/models';
+  import type { ScheduledWord } from '@runedeck/core/models';
   import type { IDataStore } from '@runedeck/data';
   import Card from '$lib/components/Card.svelte';
   import GradeButtons from '$lib/components/GradeButtons.svelte';
@@ -23,8 +23,10 @@
   let dataStore: IDataStore | null = null;
   let freeStudyMode = false;
   let practiceMode: 'new' | 'learning' | 'all' | null = null;
-  let againQueue: ScheduledWord[] = []; // Cards marked "Again" for immediate re-review
+  let failedQueue: ScheduledWord[] = []; // Cards marked "Didn't Get It" - pushed to end
+  let failCounts: Map<string, number> = new Map(); // Track fails per card this session (max 3)
   let navigatingHome = false; // Flag to prevent completion redirect when user clicks Home
+  const MAX_FAILS_PER_SESSION = 3;
 
   onMount(async () => {
     try {
@@ -125,21 +127,15 @@
 
     const key = e.key.toLowerCase();
 
-    if (key === 'r') {
+    if (key === ' ' || key === 'r') {
       e.preventDefault();
       reveal();
     } else if (key === '1') {
       e.preventDefault();
-      handleGrade(1);
+      handleGrade(false); // Didn't Get It
     } else if (key === '2') {
       e.preventDefault();
-      handleGrade(2);
-    } else if (key === '3') {
-      e.preventDefault();
-      handleGrade(3);
-    } else if (key === '4') {
-      e.preventDefault();
-      handleGrade(4);
+      handleGrade(true); // Got It
     } else if (key === 'escape') {
       e.preventDefault();
       goHome();
@@ -150,51 +146,56 @@
     studyStore.reveal();
   }
 
-  async function handleGrade(grade: Grade) {
+  async function handleGrade(gotIt: boolean) {
     const state = $studyStore;
     if (!state.session || !state.currentCard || !dataStore) return;
-    if (!state.revealed && modeOf(state.currentCard.scheduling) === 'retention') return;
+    if (!state.revealed) return; // Must reveal before grading
 
     try {
       const card = state.currentCard;
       const elapsed = state.session.elapsed();
 
-      // Update scheduling
-      const newScheduling = gradeCard(card.scheduling, grade);
+      // Zen grading: Got It (true) / Didn't Get It (false)
+      const newScheduling = gradeCardZen(card.scheduling, gotIt);
       await dataStore.upsertScheduling(newScheduling);
 
-      // Save review
+      // Save review (use 2 for "Got It", 1 for "Didn't Get It" for backwards compat)
       await dataStore.addReview({
         id: uuid(),
         word_id: card.word.id,
         ts: Date.now(),
-        grade,
+        grade: gotIt ? 2 : 1,
         elapsed_ms: elapsed,
       });
 
-      // CRITICAL: If user pressed "Again" (grade = 1), re-add card to end of session
-      // This ensures you can review it again in the SAME session (like Anki's learning steps)
-      if (grade === 1) {
-        // Create a copy of the card with updated scheduling
-        const cardForReview: ScheduledWord = {
-          ...card,
-          scheduling: newScheduling,
-        };
+      // Failed card logic: push to end of queue (max 3 fails per card per session)
+      if (!gotIt) {
+        const currentFails = failCounts.get(card.word.id) || 0;
 
-        // Add to againQueue - will be shown at end of session
-        againQueue.push(cardForReview);
+        if (currentFails < MAX_FAILS_PER_SESSION) {
+          // Track this fail
+          failCounts.set(card.word.id, currentFails + 1);
+
+          // Push to end of session queue (with updated scheduling)
+          const cardForRetry: ScheduledWord = {
+            ...card,
+            scheduling: newScheduling,
+          };
+          failedQueue.push(cardForRetry);
+        }
+        // If >= MAX_FAILS, card sleeps until tomorrow (not re-added)
       }
 
       // Move to next card
       studyStore.nextCard();
 
-      // Get fresh state after moving to next card (state variable is now stale)
+      // Get fresh state after moving to next card
       const currentState = $studyStore;
 
-      // If main queue is empty but we have "Again" cards, add them back
-      if (currentState.session && currentState.session.queue.length === 0 && againQueue.length > 0) {
-        studyStore.addCards(againQueue);
-        againQueue = []; // Clear the again queue
+      // If main queue empty but we have failed cards, add them back
+      if (currentState.session && currentState.session.queue.length === 0 && failedQueue.length > 0) {
+        studyStore.addCards(failedQueue);
+        failedQueue = [];
       }
     } catch (err: any) {
       console.error('Failed to grade card:', err);
