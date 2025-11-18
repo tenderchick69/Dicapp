@@ -19,15 +19,21 @@
     const deckId = $deckStore.currentDeckId;
     if (!deckId) return goto('/');
 
-    const words = await db.getWordsByDeck(deckId);
+    // Get all words in the deck
+    const words = await db.getAllWords(deckId);
     if (words.length === 0) return goto('/');
 
     queue = words.map(w => ({
       word: w,
       scheduling: {
+        word_id: w.id,
         times_correct: 0,   // HARD ZERO — no escape
         is_mastered: 0,
-        due_ts: Date.now()
+        due_ts: Date.now(),
+        interval: 0,
+        ease: 2.5,
+        lapses: 0,
+        is_new: 1
       }
     }));
 
@@ -59,7 +65,7 @@
     }
 
     const db = await getDataStore();
-    await db.updateScheduling(card.word.id, card.scheduling);
+    await db.upsertScheduling(card.scheduling);
 
     showBack = false;
     current += 1;
