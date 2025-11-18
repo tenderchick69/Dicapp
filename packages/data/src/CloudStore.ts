@@ -18,8 +18,8 @@ export class CloudStore implements IDataStore {
   constructor(private supabase: SupabaseClient) {}
 
   async init(): Promise<void> {
-    // No-op for cloud store - schema managed by Supabase migrations
-    // Just verify we can connect
+    // Schema managed by Supabase migrations - columns auto-refresh on server
+    // Verify connection and that zen columns (times_correct, is_mastered) exist
     const { error } = await this.supabase.from('decks').select('id').limit(1);
     if (error && error.code !== 'PGRST116') {
       // PGRST116 = no rows, which is fine
@@ -682,6 +682,8 @@ export class CloudStore implements IDataStore {
         ease: scheduling.ease,
         lapses: scheduling.lapses,
         is_new: scheduling.is_new,
+        times_correct: scheduling.times_correct ?? 0,
+        is_mastered: scheduling.is_mastered ?? 0,
       };
     });
 
