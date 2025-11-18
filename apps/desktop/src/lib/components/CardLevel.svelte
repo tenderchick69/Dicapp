@@ -9,11 +9,8 @@
    */
 
   export let level: number = 0; // 0-4
-  export let headword: string;
-  export let definition: string;
-  export let showFront: boolean = true; // true = show headword, false = show definition
 
-  // Clamp level to 0-4
+  // Clamp level to 0-4 (never show level 5+ until celebration)
   $: clampedLevel = Math.min(Math.max(level, 0), 4);
 
   // Level-specific styling
@@ -107,13 +104,9 @@
     </div>
   {/if}
 
-  <!-- Card content -->
+  <!-- Card content (slot for custom content) -->
   <div class="card-content">
-    {#if showFront}
-      <div class="headword">{headword}</div>
-    {:else}
-      <div class="definition">{definition}</div>
-    {/if}
+    <slot />
   </div>
 
   <!-- Subtle texture overlay for level 3 -->

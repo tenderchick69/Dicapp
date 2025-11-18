@@ -160,7 +160,7 @@ export const POST: RequestHandler = async ({ request }) => {
       );
     }
 
-    // Bulk insert scheduling
+    // Bulk insert scheduling - ensure zen fields are explicitly 0 for new cards
     const schedulingToInsert = parseResult.words.map((word) => {
       const scheduling = createInitialScheduling(word.id);
       return {
@@ -170,8 +170,8 @@ export const POST: RequestHandler = async ({ request }) => {
         ease: scheduling.ease,
         lapses: scheduling.lapses,
         is_new: scheduling.is_new,
-        times_correct: scheduling.times_correct || 0,
-        is_mastered: scheduling.is_mastered || 0,
+        times_correct: 0,  // Always start at 0 for new imports
+        is_mastered: 0,    // Never pre-mastered
       };
     });
 
