@@ -116,6 +116,23 @@ function createDeckStore() {
       const state = get(store);
       return state.decks.find(d => d.id === state.currentDeckId) || null;
     },
+
+    /**
+     * Create a new deck
+     */
+    async createDeck(name: string, profile: 'simple' | 'full' = 'full'): Promise<string> {
+      const dataStore = await getDataStore();
+      const { createDeck } = await import('@runedeck/core/models');
+
+      const newDeck = createDeck({ name, profile });
+      await dataStore.createDeck(newDeck);
+
+      // Reload decks and select the new one
+      await this.load();
+      await this.selectDeck(newDeck.id);
+
+      return newDeck.id;
+    },
   };
 }
 

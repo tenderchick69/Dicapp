@@ -9,7 +9,9 @@
   import { authStore } from '$lib/stores/auth';
   import { studyStore } from '$lib/stores/study';
   import Header from '$lib/components/Header.svelte';
-  import { Compass, LogIn } from 'lucide-svelte';
+  import { Compass, LogIn, Upload, Plus } from 'lucide-svelte';
+
+  let creatingDeck = false;
 
   let zenStats = {
     total: 0,
@@ -115,6 +117,19 @@
   function goToSignIn() {
     goto('/auth/signin');
   }
+
+  async function createFirstDeck() {
+    if (creatingDeck) return;
+    creatingDeck = true;
+    try {
+      await deckStore.createDeck('My First Deck', 'full');
+      await loadStats();
+    } catch (err: any) {
+      alert('Failed to create deck: ' + err.message);
+    } finally {
+      creatingDeck = false;
+    }
+  }
 </script>
 
 <Header />
@@ -169,13 +184,38 @@
       </div>
     {:else if $deckStore.decks.length === 0}
       <!-- Empty State (No Decks) -->
-      <div class="text-center py-12 px-6 rounded-lg" style="background: var(--card-bg); border: 1px solid var(--card-border)">
-        <p class="text-lg mb-4" style="color: var(--muted)">
-          Create your first deck to get started
-        </p>
-        <p class="text-sm" style="color: var(--muted)">
-          Use the menu in the header to create, import, or explore decks
-        </p>
+      <div class="text-center py-12">
+        <div class="mb-8">
+          <h2 class="text-3xl font-display font-bold mb-3" style="color: var(--accent-1)">
+            Start Your Vocabulary Journey
+          </h2>
+          <p class="text-lg" style="color: var(--muted)">
+            Import words from a CSV file or create an empty deck
+          </p>
+        </div>
+
+        <div class="space-y-4 max-w-md mx-auto">
+          <!-- Import CSV Button -->
+          <button
+            on:click={goToImport}
+            class="w-full py-6 px-8 rounded-xl font-semibold text-xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
+            style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
+          >
+            <Upload size={24} />
+            Import CSV
+          </button>
+
+          <!-- Create Empty Deck Button -->
+          <button
+            on:click={createFirstDeck}
+            disabled={creatingDeck}
+            class="w-full py-6 px-8 rounded-xl font-semibold text-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            style="background: var(--accent-2); color: white; box-shadow: var(--shadow-lg)"
+          >
+            <Plus size={24} />
+            {creatingDeck ? 'Creating...' : 'Create Empty Deck'}
+          </button>
+        </div>
       </div>
     {:else if zenStats.total === 0}
       <!-- Empty Deck State -->

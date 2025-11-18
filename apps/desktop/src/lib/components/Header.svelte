@@ -3,7 +3,9 @@
   import { goto, invalidateAll } from '$app/navigation';
   import { deckStore } from '$lib/stores/deck';
   import { authStore } from '$lib/stores/auth';
-  import { Settings as SettingsIcon, Compass } from 'lucide-svelte';
+  import { Settings as SettingsIcon, Compass, Menu, Plus, Upload, Download, Skull } from 'lucide-svelte';
+
+  let menuOpen = false;
 
   onMount(() => {
     authStore.init();
@@ -19,11 +21,43 @@
   }
 
   function goToSettings() {
+    menuOpen = false;
     goto('/settings');
   }
 
   function goToExplore() {
     goto('/explore');
+  }
+
+  async function createNewDeck() {
+    menuOpen = false;
+    const name = prompt('Enter deck name:');
+    if (name && name.trim()) {
+      try {
+        await deckStore.createDeck(name.trim(), 'full');
+        alert('Deck created!');
+      } catch (err: any) {
+        alert('Failed to create deck: ' + err.message);
+      }
+    }
+  }
+
+  function goToImport() {
+    menuOpen = false;
+    goto('/import');
+  }
+
+  function goToGraveyard() {
+    menuOpen = false;
+    goto('/graveyard');
+  }
+
+  function toggleMenu() {
+    menuOpen = !menuOpen;
+  }
+
+  function closeMenu() {
+    menuOpen = false;
   }
 </script>
 
@@ -61,13 +95,58 @@
       {/if}
 
       {#if $authStore.user}
-        <button
-          on:click={goToSettings}
-          class="p-2 rounded-lg hover:opacity-70 transition-opacity"
-          title="Settings"
-        >
-          <SettingsIcon size={20} style="color: var(--muted)" />
-        </button>
+        <div class="relative">
+          <button
+            on:click={toggleMenu}
+            class="p-2 rounded-lg hover:opacity-70 transition-opacity"
+            title="Menu"
+          >
+            <Menu size={20} style="color: var(--muted)" />
+          </button>
+
+          {#if menuOpen}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="fixed inset-0 z-40" on:click={closeMenu}></div>
+            <div class="absolute right-0 mt-2 w-56 rounded-lg shadow-lg z-50" style="background: var(--card-bg); border: 1px solid var(--card-border)">
+              <div class="py-2">
+                <button
+                  on:click={createNewDeck}
+                  class="w-full px-4 py-3 text-left hover:opacity-70 transition-opacity flex items-center gap-3"
+                  style="color: var(--fg)"
+                >
+                  <Plus size={18} />
+                  Create New Deck
+                </button>
+                <button
+                  on:click={goToImport}
+                  class="w-full px-4 py-3 text-left hover:opacity-70 transition-opacity flex items-center gap-3"
+                  style="color: var(--fg)"
+                >
+                  <Upload size={18} />
+                  Import CSV
+                </button>
+                <div class="border-t my-2" style="border-color: var(--card-border)"></div>
+                <button
+                  on:click={goToGraveyard}
+                  class="w-full px-4 py-3 text-left hover:opacity-70 transition-opacity flex items-center gap-3"
+                  style="color: var(--fg)"
+                >
+                  <Skull size={18} />
+                  Graveyard
+                </button>
+                <button
+                  on:click={goToSettings}
+                  class="w-full px-4 py-3 text-left hover:opacity-70 transition-opacity flex items-center gap-3"
+                  style="color: var(--fg)"
+                >
+                  <SettingsIcon size={18} />
+                  Settings
+                </button>
+              </div>
+            </div>
+          {/if}
+        </div>
       {/if}
     </div>
   </div>
