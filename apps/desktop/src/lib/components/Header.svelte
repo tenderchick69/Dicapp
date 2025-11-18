@@ -25,8 +25,8 @@
     showScopeMenu = false;
   }
 
-  function selectDeck(deckId: string) {
-    deckStore.setCurrent(deckId);
+  async function selectDeck(deckId: string) {
+    await deckStore.setCurrent(deckId);
     scopeStore.setCurrent(); // Auto-switch to current deck scope
     showScopeMenu = false;
     // Force page refresh to update stats

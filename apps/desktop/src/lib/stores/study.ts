@@ -1,44 +1,87 @@
 import { writable, derived } from 'svelte/store';
+import { getDataStore } from './database';
+import { gradeCardZen } from '@runedeck/core/scheduler';
+import { uuid } from '@runedeck/core/models';
 import type { WordWithScheduling } from '@runedeck/core/models';
-import { StudySession } from '@runedeck/core/queue';
 
 interface StudyState {
-  session: StudySession | null;
+  sessionActive: boolean;
+  cards: WordWithScheduling[];
+  currentIndex: number;
   currentCard: WordWithScheduling | null;
-  revealed: boolean;
-  progress: { current: number; total: number; percent: number };
 }
 
 function createStudyStore() {
   const { subscribe, set, update } = writable<StudyState>({
-    session: null,
+    sessionActive: false,
+    cards: [],
+    currentIndex: 0,
     currentCard: null,
-    revealed: false,
-    progress: { current: 0, total: 0, percent: 0 },
   });
 
   return {
     subscribe,
     startSession: (cards: WordWithScheduling[]) => {
-      const session = new StudySession(cards);
-      const currentCard = session.current();
-      const progress = session.progress();
-      set({ session, currentCard, revealed: false, progress });
-    },
-    reveal: () => {
-      update((state) => ({ ...state, revealed: true }));
+      set({
+        sessionActive: true,
+        cards,
+        currentIndex: 0,
+        currentCard: cards[0] || null,
+      });
     },
     nextCard: () => {
       update((state) => {
-        if (!state.session) return state;
-        state.session.next();
-        const currentCard = state.session.current();
-        const progress = state.session.progress();
-        return { ...state, currentCard, revealed: false, progress };
+        const nextIndex = state.currentIndex + 1;
+        return {
+          ...state,
+          currentIndex: nextIndex,
+          currentCard: state.cards[nextIndex] || null,
+        };
+      });
+    },
+    async gradeCardZen(cardId: string, gotIt: boolean) {
+      const state = await new Promise<StudyState>((resolve) => {
+        subscribe((s) => resolve(s))();
+      });
+
+      if (!state.currentCard) return;
+
+      const dataStore = await getDataStore();
+      const newScheduling = gradeCardZen(state.currentCard.scheduling, gotIt);
+
+      await dataStore.upsertScheduling(newScheduling);
+      await dataStore.addReview({
+        id: uuid(),
+        word_id: cardId,
+        ts: Date.now(),
+        grade: gotIt ? 2 : 1,
+        elapsed_ms: 1000,
+      });
+
+      // Update current card with new scheduling
+      update((s) => ({
+        ...s,
+        currentCard: s.currentCard ? {
+          ...s.currentCard,
+          scheduling: newScheduling,
+        } : null,
+      }));
+    },
+    endSession: () => {
+      set({
+        sessionActive: false,
+        cards: [],
+        currentIndex: 0,
+        currentCard: null,
       });
     },
     reset: () => {
-      set({ session: null, currentCard: null, revealed: false, progress: { current: 0, total: 0, percent: 0 } });
+      set({
+        sessionActive: false,
+        cards: [],
+        currentIndex: 0,
+        currentCard: null,
+      });
     },
   };
 }
@@ -47,5 +90,5 @@ export const studyStore = createStudyStore();
 
 export const isComplete = derived(
   studyStore,
-  ($study) => $study.session?.isComplete() ?? true
+  ($study) => !$study.sessionActive || $study.currentCard === null
 );

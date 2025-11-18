@@ -1,5 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
+import { invalidateAll } from '$app/navigation';
 import type { Deck } from '@runedeck/core/models';
 import { getDataStore } from './database';
 
@@ -64,19 +65,24 @@ function createDeckStore() {
     /**
      * Select a deck as current
      */
-    selectDeck(deckId: string) {
+    async selectDeck(deckId: string) {
       update(s => {
         if (browser) {
           localStorage.setItem(STORAGE_KEY, deckId);
         }
         return { ...s, currentDeckId: deckId };
       });
+
+      // Force refresh all data when deck changes
+      if (browser) {
+        await invalidateAll();
+      }
     },
 
     /**
      * Set current deck (alias for selectDeck for API consistency)
      */
-    setCurrent(deckId: string | null) {
+    async setCurrent(deckId: string | null) {
       if (deckId === null) {
         update(s => {
           if (browser) {
@@ -85,7 +91,7 @@ function createDeckStore() {
           return { ...s, currentDeckId: null };
         });
       } else {
-        this.selectDeck(deckId);
+        await this.selectDeck(deckId);
       }
     },
 
