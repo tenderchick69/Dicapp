@@ -44,11 +44,17 @@
 
       // Free study mode if no cards due
       if (cards.length === 0) {
+        console.log('%c FREE STUDY FALLBACK TRIGGERED — THESE MUST BE VIRGIN', 'color:magenta;font-size:20px;background:black');
         result = await buildQueueByScope(dataStore, $scopeStore, currentDeckId, {
           dueLimit: 10000,
           newPerDay: 10000,
         });
         cards = result.cards;
+        console.log('%c FALLBACK CARDS RAW', 'color:magenta;font-size:16px', cards.map(c => ({
+          headword: c.word.headword,
+          times_correct: c.scheduling.times_correct,
+          is_mastered: c.scheduling.is_mastered
+        })));
       }
 
       if (cards.length === 0) {
@@ -123,8 +129,22 @@
       willCelebrate: gotIt && oldCorrect === 4 && newCorrect === 5 && !wasMastered
     });
 
-    // Only celebrate if we just reached mastery (exactly 4 → 5)
-    if (gotIt && oldCorrect === 4 && newCorrect === 5 && !wasMastered) {
+    // Only celebrate if we just reached mastery (exactly 4 → 5) - IRON-CLAD
+    const shouldCelebrate = gotIt &&
+                            oldCorrect === 4 &&
+                            newCorrect === 5 &&
+                            !wasMastered &&
+                            typeof oldCorrect === 'number';
+
+    console.log('%c CELEBRATION CHECK', 'color:orange;font-size:14px', {
+      gotIt,
+      oldCorrect,
+      newCorrect,
+      wasMastered,
+      shouldCelebrate
+    });
+
+    if (shouldCelebrate) {
       celebrating = true;
       setTimeout(() => {
         celebrating = false;

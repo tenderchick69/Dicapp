@@ -19,15 +19,20 @@ export const studyStore = {
   subscribe,
 
   start(cards: WordWithScheduling[]) {
-    // Force all cards to start at 0 - trust nothing
+    // NUCLEAR: Force ALL cards to 0 - ignore database values entirely
     const cleanCards = cards.map(c => ({
       ...c,
       scheduling: {
         ...c.scheduling,
-        times_correct: c.scheduling.times_correct ?? 0,
-        is_mastered: c.scheduling.is_mastered ?? 0,
+        times_correct: 0,  // ALWAYS 0, no exceptions
+        is_mastered: 0,    // ALWAYS 0, no exceptions
       }
     }));
+    console.log('%c STUDY START - ALL FORCED TO ZERO', 'color:cyan;font-size:18px;background:black', cleanCards.map(card => ({
+      headword: card.word.headword,
+      times_correct: card.scheduling.times_correct,
+      is_mastered: card.scheduling.is_mastered
+    })));
     set({ cards: cleanCards, index: 0 });
   },
 
