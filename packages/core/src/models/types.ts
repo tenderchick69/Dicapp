@@ -66,6 +66,8 @@ export const SchedulingDataSchema = z.object({
   ease: z.number().default(2.5),
   lapses: z.number().default(0),
   is_new: z.number().int().min(0).max(1).default(1), // SQLite boolean as integer
+  times_correct: z.number().int().default(0), // Zen ladder: consecutive correct answers
+  is_mastered: z.number().int().min(0).max(1).default(0), // Graveyard: reached level 5
 });
 
 export type SchedulingData = z.infer<typeof SchedulingDataSchema>;

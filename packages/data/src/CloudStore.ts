@@ -322,6 +322,8 @@ export class CloudStore implements IDataStore {
       ease: scheduling.ease,
       lapses: scheduling.lapses,
       is_new: scheduling.is_new,
+      times_correct: scheduling.times_correct ?? 0,
+      is_mastered: scheduling.is_mastered ?? 0,
     });
 
     if (error) throw new Error(`Failed to upsert scheduling: ${error.message}`);
@@ -348,6 +350,8 @@ export class CloudStore implements IDataStore {
         ease: 2.5,
         lapses: 0,
         is_new: 1,
+        times_correct: 0,
+        is_mastered: 0,
       })
       .in('word_id', wordIds);
 
@@ -429,6 +433,7 @@ export class CloudStore implements IDataStore {
       .in('words.deck_id', deckIds)
       .lte('due_ts', now)
       .eq('is_new', 0)
+      .eq('is_mastered', 0)
       .order('due_ts', { ascending: true })
       .limit(limit);
 
@@ -450,6 +455,7 @@ export class CloudStore implements IDataStore {
       .select('*, words!inner(*)')
       .in('words.deck_id', deckIds)
       .eq('is_new', 1)
+      .eq('is_mastered', 0)
       .order('word_id', { ascending: true })  // Order by scheduling table field, not joined table
       .limit(limit);
 
@@ -787,6 +793,8 @@ export class CloudStore implements IDataStore {
       ease: row.ease,
       lapses: row.lapses,
       is_new: row.is_new,
+      times_correct: row.times_correct ?? 0,
+      is_mastered: row.is_mastered ?? 0,
     };
   }
 
@@ -810,6 +818,8 @@ export class CloudStore implements IDataStore {
       ease: row.ease,
       lapses: row.lapses,
       is_new: row.is_new,
+      times_correct: row.times_correct ?? 0,
+      is_mastered: row.is_mastered ?? 0,
     };
 
     return { word, scheduling };

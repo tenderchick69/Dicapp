@@ -2,7 +2,7 @@
  * Database schema - same SQL for both SQLite and sql.js
  */
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const MIGRATIONS = [
   // Migration 1: Initial schema
@@ -97,6 +97,19 @@ UPDATE words SET deck_id = 'default' WHERE deck_id IS NULL;
 -- Update schema version
 UPDATE schema_version SET version = 2 WHERE version = 1;
 INSERT OR IGNORE INTO schema_version (version) VALUES (2);
+  `,
+  // Migration 3: Zen ladder system - add times_correct and is_mastered
+  `
+-- Add zen ladder progression columns to scheduling
+ALTER TABLE scheduling ADD COLUMN times_correct INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE scheduling ADD COLUMN is_mastered INTEGER NOT NULL DEFAULT 0;
+
+-- Create index for querying mastered cards (graveyard)
+CREATE INDEX IF NOT EXISTS idx_sched_mastered ON scheduling(is_mastered);
+
+-- Update schema version
+UPDATE schema_version SET version = 3 WHERE version = 2;
+INSERT OR IGNORE INTO schema_version (version) VALUES (3);
   `,
 ];
 

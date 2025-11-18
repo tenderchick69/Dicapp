@@ -285,15 +285,17 @@ export class SqliteStore implements IDataStore {
     if (!this.db) throw new Error('Database not initialized');
 
     await this.db.execute(
-      `INSERT INTO scheduling (word_id, due_ts, interval, ease, lapses, is_new)
-       VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO scheduling (word_id, due_ts, interval, ease, lapses, is_new, times_correct, is_mastered)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(word_id) DO UPDATE SET
        due_ts = excluded.due_ts,
        interval = excluded.interval,
        ease = excluded.ease,
        lapses = excluded.lapses,
-       is_new = excluded.is_new`,
-      [data.word_id, data.due_ts, data.interval, data.ease, data.lapses, data.is_new]
+       is_new = excluded.is_new,
+       times_correct = excluded.times_correct,
+       is_mastered = excluded.is_mastered`,
+      [data.word_id, data.due_ts, data.interval, data.ease, data.lapses, data.is_new, data.times_correct ?? 0, data.is_mastered ?? 0]
     );
   }
 
@@ -303,7 +305,7 @@ export class SqliteStore implements IDataStore {
     // Reset all scheduling for words in this deck to initial state
     await this.db.execute(
       `UPDATE scheduling
-       SET due_ts = 0, interval = 0, ease = 2.5, lapses = 0, is_new = 1
+       SET due_ts = 0, interval = 0, ease = 2.5, lapses = 0, is_new = 1, times_correct = 0, is_mastered = 0
        WHERE word_id IN (SELECT id FROM words WHERE deck_id = ?)`,
       [deckId]
     );
@@ -313,7 +315,7 @@ export class SqliteStore implements IDataStore {
     if (!this.db) throw new Error('Database not initialized');
 
     const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
        FROM words w
        INNER JOIN scheduling s ON w.id = s.word_id
        WHERE w.deck_id = ? AND s.due_ts <= ? AND s.is_new = 0
@@ -329,7 +331,7 @@ export class SqliteStore implements IDataStore {
     if (!this.db) throw new Error('Database not initialized');
 
     const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
        FROM words w
        INNER JOIN scheduling s ON w.id = s.word_id
        WHERE w.deck_id = ? AND s.is_new = 1
@@ -345,7 +347,7 @@ export class SqliteStore implements IDataStore {
     if (!this.db) throw new Error('Database not initialized');
 
     const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
        FROM words w
        INNER JOIN scheduling s ON w.id = s.word_id
        WHERE w.deck_id = ? AND s.lapses >= ?
@@ -384,10 +386,10 @@ export class SqliteStore implements IDataStore {
 
     const placeholders = deckIds.map(() => '?').join(',');
     const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
        FROM words w
        INNER JOIN scheduling s ON w.id = s.word_id
-       WHERE w.deck_id IN (${placeholders}) AND s.due_ts <= ? AND s.is_new = 0
+       WHERE w.deck_id IN (${placeholders}) AND s.due_ts <= ? AND s.is_new = 0 AND s.is_mastered = 0
        ORDER BY s.due_ts ASC
        LIMIT ?`,
       [...deckIds, now, limit]
@@ -408,10 +410,10 @@ export class SqliteStore implements IDataStore {
 
     const placeholders = deckIds.map(() => '?').join(',');
     const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
        FROM words w
        INNER JOIN scheduling s ON w.id = s.word_id
-       WHERE w.deck_id IN (${placeholders}) AND s.is_new = 1
+       WHERE w.deck_id IN (${placeholders}) AND s.is_new = 1 AND s.is_mastered = 0
        ORDER BY w.created_at ASC
        LIMIT ?`,
       [...deckIds, limit]
@@ -432,7 +434,7 @@ export class SqliteStore implements IDataStore {
 
     const placeholders = deckIds.map(() => '?').join(',');
     const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
        FROM words w
        INNER JOIN scheduling s ON w.id = s.word_id
        WHERE w.deck_id IN (${placeholders}) AND s.lapses >= ?
@@ -511,7 +513,7 @@ export class SqliteStore implements IDataStore {
 
     // Get ALL words with scheduling, ignoring due_ts (for practice mode)
     const rows = await this.db.select<any>(
-      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new
+      `SELECT w.*, s.word_id as sched_word_id, s.due_ts, s.interval, s.ease, s.lapses, s.is_new, s.times_correct, s.is_mastered
        FROM words w
        INNER JOIN scheduling s ON w.id = s.word_id
        WHERE w.deck_id IN (${placeholders})
@@ -662,6 +664,8 @@ export class SqliteStore implements IDataStore {
       ease: row.ease,
       lapses: row.lapses,
       is_new: row.is_new,
+      times_correct: row.times_correct ?? 0,
+      is_mastered: row.is_mastered ?? 0,
     };
   }
 
@@ -685,6 +689,8 @@ export class SqliteStore implements IDataStore {
         ease: row.ease,
         lapses: row.lapses,
         is_new: row.is_new,
+        times_correct: row.times_correct ?? 0,
+        is_mastered: row.is_mastered ?? 0,
       },
     };
   }

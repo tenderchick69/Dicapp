@@ -72,6 +72,8 @@ export function createInitialScheduling(wordId: string, now = Date.now()): Sched
     ease: 2.5,
     lapses: 0,
     is_new: 1,
+    times_correct: 0,
+    is_mastered: 0,
   };
 }
 
