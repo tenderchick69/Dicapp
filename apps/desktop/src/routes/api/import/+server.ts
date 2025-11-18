@@ -171,6 +171,8 @@ export const POST: RequestHandler = async ({ request }) => {
         ease: scheduling.ease,
         lapses: scheduling.lapses,
         is_new: scheduling.is_new,
+        times_correct: scheduling.times_correct || 0,
+        is_mastered: scheduling.is_mastered || 0,
       };
     });
 

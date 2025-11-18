@@ -135,15 +135,15 @@
       // Reload decks
       await deckStore.refresh();
 
-      // Set current deck to imported deck
+      // Set current deck to imported deck and redirect immediately
       if (result.deckId) {
-        deckStore.setCurrent(result.deckId);
+        deckStore.selectDeck(result.deckId);
       }
 
-      // Redirect home after success
+      // Redirect home with success flag
       setTimeout(() => {
-        goto('/');
-      }, 2000);
+        goto('/?imported=success');
+      }, 1500);
     } catch (err: any) {
       error = 'Import failed: ' + err.message;
     } finally {
