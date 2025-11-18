@@ -90,15 +90,6 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   letter-spacing: 0.01em; /* Slight breathing room */
-  /* Subtle paper texture for zen aesthetic */
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(107, 122, 107, 0.02) 2px,
-      rgba(107, 122, 107, 0.02) 4px
-    );
 }
 
 /* Zen typography adjustments */

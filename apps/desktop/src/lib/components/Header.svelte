@@ -132,8 +132,8 @@
       {#if showScopeMenu}
         <!-- Dropdown Menu -->
         <div
-          class="absolute right-0 mt-2 w-64 rounded-lg shadow-xl z-50"
-          style="background: var(--card-bg); border: 1px solid var(--card-border)"
+          class="absolute right-0 mt-2 w-64 rounded-lg shadow-xl"
+          style="background: var(--card-bg); border: 1px solid var(--card-border); z-index: 9999;"
         >
           <!-- Scope Options -->
           <div class="p-3 border-b" style="border-color: var(--card-border)">
@@ -247,7 +247,8 @@
 <!-- Click outside to close -->
 {#if showScopeMenu}
   <div
-    class="fixed inset-0 z-40"
+    class="fixed inset-0"
+    style="z-index: 9998;"
     on:click={() => showScopeMenu = false}
     on:keydown={(e) => e.key === 'Escape' && (showScopeMenu = false)}
     role="button"
