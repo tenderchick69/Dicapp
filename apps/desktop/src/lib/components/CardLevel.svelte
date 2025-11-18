@@ -1,9 +1,12 @@
 <!-- src/lib/components/CardLevel.svelte -->
 <script lang="ts">
   export let level: number = 0;   // 0-4 ONLY. 5 is forbidden here.
+
+  // HARD CLAMP — no level above 4, no null, no undefined
+  $: safeLevel = Math.min(Math.max(level ?? 0, 0), 4);
 </script>
 
-<div class="card level-{level}">
+<div class="card level-{safeLevel}">
   <slot />
 </div>
 

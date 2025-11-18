@@ -39,6 +39,8 @@
 
     // shuffle new cards so they don't clump
     queue = queue.sort(() => Math.random() - 0.5);
+
+    console.log('%c ZEN FINAL BREATH — all cards forced to 0', 'color:#22c55e;font-size:20px', queue);
   });
 
   function reveal() {
@@ -57,11 +59,11 @@
       card.scheduling.times_correct = 0;
     }
 
-    // ONLY celebrate when we literally just crossed from 4 → 5
+    // Celebrate ONLY when we literally just crossed the threshold
     if (gotIt && oldCorrect === 4) {
       celebrating = true;
       card.scheduling.is_mastered = 1;
-      setTimeout(() => celebrating = false, 3000);
+      setTimeout(() => celebrating = false, 3200);
     }
 
     const db = await getDataStore();
