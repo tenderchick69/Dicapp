@@ -92,15 +92,15 @@
   }
 
   async function grade(gotIt: boolean) {
-    if (!$studyStore.currentCard) return;
+    if (!$studyStore.currentCard?.word) return;
 
     const card = $studyStore.currentCard;
-    const wasNotMastered = card.scheduling.is_mastered === 0;
+    const wasNotMastered = card.scheduling?.is_mastered === 0;
 
     await studyStore.gradeCardZen(card.word.id, gotIt);
 
     // Check if reached mastery
-    if (gotIt && wasNotMastered && $studyStore.currentCard?.scheduling.is_mastered === 1) {
+    if (gotIt && wasNotMastered && $studyStore.currentCard?.scheduling?.is_mastered === 1) {
       celebrating = true;
       setTimeout(() => {
         celebrating = false;
@@ -140,22 +140,22 @@
     <MasteryCelebration active={celebrating} />
 
     <div class="card-area">
-      <CardLevel level={$studyStore.currentCard.scheduling.times_correct ?? 0}>
+      <CardLevel level={$studyStore.currentCard?.scheduling?.times_correct ?? 0}>
         <div class="card">
           <div class="card-front">
-            <h1 class="headword">{$studyStore.currentCard.word.headword}</h1>
-            {#if $studyStore.currentCard.word.ipa}
+            <h1 class="headword">{$studyStore.currentCard?.word?.headword ?? 'Loading...'}</h1>
+            {#if $studyStore.currentCard?.word?.ipa}
               <p class="ipa">{$studyStore.currentCard.word.ipa}</p>
             {/if}
           </div>
 
           {#if showBack}
             <div class="card-back">
-              <p class="definition">{$studyStore.currentCard.word.definition}</p>
-              {#if $studyStore.currentCard.word.example}
+              <p class="definition">{$studyStore.currentCard?.word?.definition ?? ''}</p>
+              {#if $studyStore.currentCard?.word?.example}
                 <p class="example">{$studyStore.currentCard.word.example}</p>
               {/if}
-              {#if $studyStore.currentCard.word.gloss_de}
+              {#if $studyStore.currentCard?.word?.gloss_de}
                 <p class="gloss">{$studyStore.currentCard.word.gloss_de}</p>
               {/if}
             </div>
