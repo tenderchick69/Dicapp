@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { getDataStore } from '$lib/stores/database';
   import { deckStore } from '$lib/stores/deck';
   import { scopeStore } from '$lib/stores/scope';
