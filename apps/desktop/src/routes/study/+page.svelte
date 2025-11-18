@@ -12,7 +12,8 @@
   import { uuid } from '@runedeck/core/models';
   import type { ScheduledWord } from '@runedeck/core/models';
   import type { IDataStore } from '@runedeck/data';
-  import Card from '$lib/components/Card.svelte';
+  import CardLevel from '$lib/components/CardLevel.svelte';
+  import MasteryCelebration from '$lib/components/MasteryCelebration.svelte';
   import GradeButtons from '$lib/components/GradeButtons.svelte';
   import Header from '$lib/components/Header.svelte';
   import { ArrowLeft } from 'lucide-svelte';
@@ -26,6 +27,7 @@
   let failedQueue: ScheduledWord[] = []; // Cards marked "Didn't Get It" - pushed to end
   let failCounts: Map<string, number> = new Map(); // Track fails per card this session (max 3)
   let navigatingHome = false; // Flag to prevent completion redirect when user clicks Home
+  let showMasteryCelebration = false; // Trigger gong + petal when card reaches mastery
   const MAX_FAILS_PER_SESSION = 3;
 
   onMount(async () => {
@@ -159,6 +161,12 @@
       const newScheduling = gradeCardZen(card.scheduling, gotIt);
       await dataStore.upsertScheduling(newScheduling);
 
+      // Check if card just reached mastery (is_mastered flipped to 1)
+      if (gotIt && newScheduling.is_mastered === 1 && card.scheduling.is_mastered === 0) {
+        showMasteryCelebration = true;
+        // Celebration will auto-hide after 3 seconds
+      }
+
       // Save review (use 2 for "Got It", 1 for "Didn't Get It" for backwards compat)
       await dataStore.addReview({
         id: uuid(),
@@ -288,17 +296,18 @@
       </div>
     {:else if $studyStore.currentCard}
       <div class="space-y-6">
-        <!-- Card -->
+        <!-- Card with Evolution (CardLevel) -->
         <div class="flex justify-center">
-          <Card
-            word={$studyStore.currentCard.word}
-            scheduling={$studyStore.currentCard.scheduling}
-            revealed={$studyStore.revealed}
+          <CardLevel
+            level={$studyStore.currentCard.scheduling.times_correct}
+            headword={$studyStore.currentCard.word.headword}
+            definition={$studyStore.currentCard.word.definition}
+            showFront={!$studyStore.revealed}
           />
         </div>
 
-        <!-- Reveal button (only for unrevealed retention cards) -->
-        {#if !$studyStore.revealed && modeOf($studyStore.currentCard.scheduling) === 'retention'}
+        <!-- Reveal button -->
+        {#if !$studyStore.revealed}
           <div class="flex justify-center">
             <button
               on:click={reveal}
@@ -311,7 +320,7 @@
         {/if}
 
         <!-- Grade buttons -->
-        {#if $studyStore.revealed || modeOf($studyStore.currentCard.scheduling) !== 'retention'}
+        {#if $studyStore.revealed}
           <div class="max-w-3xl mx-auto">
             <GradeButtons onGrade={handleGrade} disabled={false} />
           </div>
@@ -319,9 +328,14 @@
 
         <!-- Keyboard hints -->
         <div class="text-center text-xs" style="color: var(--muted); opacity: 0.6">
-          Keyboard: R=Reveal • 1-4=Grade • Esc=Exit
+          Keyboard: Space=Reveal • 1=Didn't Get It • 2=Got It • Esc=Exit
         </div>
       </div>
     {/if}
   </div>
 </div>
+
+<!-- Mastery Celebration Overlay -->
+{#if showMasteryCelebration}
+  <MasteryCelebration onComplete={() => { showMasteryCelebration = false; }} />
+{/if}
