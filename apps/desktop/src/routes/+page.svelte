@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { invalidateAll } from '$app/navigation';
   import { page } from '$app/stores';
   import { getDataStore } from '$lib/stores/database';
   import { deckStore } from '$lib/stores/deck';
@@ -50,6 +51,9 @@
   }
 
   onMount(async () => {
+    // Force reload all load functions on navigation
+    await invalidateAll();
+
     await authStore.init();
 
     // Only load decks/stats if authenticated
