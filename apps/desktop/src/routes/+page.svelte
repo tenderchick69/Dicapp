@@ -64,11 +64,24 @@
   }
 
   function playDeck() {
+    // Auto-select first deck if none selected
+    if (!$deckStore.currentDeckId && $deckStore.decks.length > 0) {
+      deckStore.setCurrentDeck($deckStore.decks[0].id);
+      // Wait for state to update, then navigate
+      setTimeout(() => goto('/study'), 100);
+      return;
+    }
+
     if (!$deckStore.currentDeckId) {
       alert('Create a deck first to start studying.');
       return;
     }
+
     goto('/study');
+  }
+
+  function goToImport() {
+    goto('/import');
   }
 
   function goToGraveyard() {
@@ -143,6 +156,20 @@
         <p class="text-sm" style="color: var(--muted)">
           Use the menu in the header to create, import, or explore decks
         </p>
+      </div>
+    {:else if zenStats.total === 0}
+      <!-- Empty Deck State -->
+      <div class="text-center py-12">
+        <div class="mb-6 text-6xl opacity-20">🍃</div>
+        <p class="text-lg mb-2" style="color: var(--muted)">This deck is empty</p>
+        <p class="text-sm mb-6" style="color: var(--muted); opacity: 0.7">Import words to begin your journey</p>
+        <button
+          on:click={goToImport}
+          class="px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105"
+          style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
+        >
+          Import CSV
+        </button>
       </div>
     {:else}
       <!-- Zen Home: Single Play Button + Minimal Stats -->
