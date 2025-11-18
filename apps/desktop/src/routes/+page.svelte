@@ -188,7 +188,7 @@
       <!-- Big Play Deck Button -->
       <button
         on:click={playDeck}
-        disabled={zenStats.due === 0 && zenStats.new === 0}
+        disabled={zenStats.total === 0}
         class="zen-play-button w-full py-8 px-6 rounded-2xl font-display font-semibold text-2xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mb-4"
         style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
       >
@@ -197,9 +197,15 @@
 
       <!-- Minimal Stats: "47 due · 12 new · 312 mastered" -->
       <div class="text-center">
-        <p class="text-sm" style="color: var(--muted); opacity: 0.7">
-          {zenStats.due} due · {zenStats.new} new · <button on:click={goToGraveyard} class="hover:opacity-100 transition-opacity" style="color: var(--muted)">{zenStats.mastered} mastered</button>
-        </p>
+        {#if zenStats.due === 0 && zenStats.new > 0}
+          <p class="text-sm mb-1" style="color: var(--muted); opacity: 0.7">
+            No reviews due · {zenStats.new} new card{zenStats.new === 1 ? '' : 's'} ready
+          </p>
+        {:else}
+          <p class="text-sm" style="color: var(--muted); opacity: 0.7">
+            {zenStats.due} due · {zenStats.new} new · <button on:click={goToGraveyard} class="hover:opacity-100 transition-opacity" style="color: var(--muted)">{zenStats.mastered} mastered</button>
+          </p>
+        {/if}
       </div>
     {/if}
   </div>
