@@ -53,6 +53,10 @@
         return;
       }
 
+      console.log('ZEN DEBUG – raw queue from buildQueueByScope:', cards);
+      console.log('ZEN DEBUG – first card word:', cards[0]?.word);
+      console.log('ZEN DEBUG – first card scheduling:', cards[0]?.scheduling);
+
       studyStore.startSession(cards);
       loading = false;
 
@@ -118,7 +122,12 @@
     goto('/');
   }
 
-  $: if (!loading && !$studyStore.sessionActive) {
+  // Graceful session end: redirect home when session inactive or queue empty
+  $: if (!loading && (!$studyStore.sessionActive || $studyStore.currentCard === null)) {
+    if ($studyStore.sessionActive && $studyStore.currentCard === null) {
+      console.log('ZEN DEBUG – Queue empty, ending session and returning home');
+      studyStore.endSession();
+    }
     goto('/');
   }
 </script>
