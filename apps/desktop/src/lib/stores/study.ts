@@ -47,8 +47,13 @@ function createStudyStore() {
 
       if (!state.currentCard) return;
 
+      // Null guards - ensure zen fields are never null before grading
+      const scheduling = state.currentCard.scheduling;
+      if (scheduling.times_correct == null) scheduling.times_correct = 0;
+      if (scheduling.is_mastered == null) scheduling.is_mastered = 0;
+
       const dataStore = await getDataStore();
-      const newScheduling = gradeCardZen(state.currentCard.scheduling, gotIt);
+      const newScheduling = gradeCardZen(scheduling, gotIt);
 
       await dataStore.upsertScheduling(newScheduling);
       await dataStore.addReview({

@@ -54,6 +54,18 @@
       }
 
       studyStore.startSession(cards);
+
+      // ZEN FINAL AUDIT - trace queue at session start
+      console.log('%c ZEN FINAL AUDIT — queue at session start', 'color:cyan;font-size:16px');
+      cards.forEach((c, i) => {
+        console.log(`Card ${i}:`, {
+          headword: c.word.headword,
+          times_correct: c.scheduling.times_correct,
+          is_mastered: c.scheduling.is_mastered,
+          due_ts: new Date(c.scheduling.due_ts).toISOString()
+        });
+      });
+
       loading = false;
 
       // Keyboard listener
@@ -95,15 +107,32 @@
     if (!$studyStore.currentCard?.word) return;
 
     const card = $studyStore.currentCard;
-    const oldCorrect = card.scheduling.times_correct ?? 0;
+
+    // Null guards - ensure zen fields are never null
+    if (card.scheduling.times_correct == null) card.scheduling.times_correct = 0;
+    if (card.scheduling.is_mastered == null) card.scheduling.is_mastered = 0;
+
+    const oldCorrect = card.scheduling.times_correct;
     const wasMastered = card.scheduling.is_mastered === 1;
+
+    console.log('%c GRADE START', 'color:yellow', {
+      headword: card.word.headword,
+      oldCorrect,
+      wasMastered,
+      gotIt
+    });
 
     await studyStore.gradeCardZen(card.word.id, gotIt);
 
     const newCorrect = $studyStore.currentCard?.scheduling.times_correct ?? oldCorrect;
 
-    // Only celebrate if we just reached mastery (4 → 5)
-    if (gotIt && newCorrect >= 5 && oldCorrect < 5 && !wasMastered) {
+    console.log('%c GRADE END', 'color:green', {
+      newCorrect,
+      willCelebrate: gotIt && oldCorrect === 4 && newCorrect === 5 && !wasMastered
+    });
+
+    // Only celebrate if we just reached mastery (exactly 4 → 5)
+    if (gotIt && oldCorrect === 4 && newCorrect === 5 && !wasMastered) {
       celebrating = true;
       setTimeout(() => {
         celebrating = false;
