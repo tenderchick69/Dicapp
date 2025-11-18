@@ -7,15 +7,11 @@
   import { authStore } from '$lib/stores/auth';
   import Header from '$lib/components/Header.svelte';
   import { Compass, LogIn } from 'lucide-svelte';
-  import { Seedling, WaterDrop, Bamboo, WiltedLeaf } from '$lib/components/icons';
 
-  let stats = {
-    total: 0,
-    new: 0,
+  let zenStats = {
     due: 0,
-    learning: 0,
-    retention: 0,
-    leeches: 0,
+    new: 0,
+    mastered: 0,
   };
   let loading = true;
 
@@ -28,7 +24,21 @@
       }
 
       const dataStore = await getDataStore();
-      stats = await dataStore.getStatsByScope($scopeStore, currentDeckId);
+      const now = Date.now();
+
+      // Get zen stats: due, new, mastered
+      const [dueCards, newCards, allCards] = await Promise.all([
+        dataStore.getDueByScope($scopeStore, currentDeckId, 10000, now),
+        dataStore.getNewByScope($scopeStore, currentDeckId, 10000),
+        dataStore.getAllWordsByScope($scopeStore, currentDeckId, 100000)
+      ]);
+
+      zenStats = {
+        due: dueCards.length,
+        new: newCards.length,
+        mastered: allCards.filter(card => card.scheduling.is_mastered === 1).length,
+      };
+
       loading = false;
     } catch (err: any) {
       console.error('Failed to load stats:', err);
@@ -53,7 +63,7 @@
     loadStats();
   }
 
-  function startReview() {
+  function playDeck() {
     if (!$deckStore.currentDeckId) {
       alert('Create a deck first to start studying.');
       return;
@@ -61,35 +71,8 @@
     goto('/study');
   }
 
-  function startPractice(mode: 'new' | 'learning' | 'all') {
-    if (!$deckStore.currentDeckId) {
-      alert('Create a deck first to start studying.');
-      return;
-    }
-    goto(`/study?mode=practice&filter=${mode}`);
-  }
-
-  async function resetDeck() {
-    if (!$deckStore.currentDeckId) {
-      alert('No deck selected.');
-      return;
-    }
-
-    const confirmed = confirm(
-      'Reset all scheduling for this deck?\n\nThis will make ALL cards "new" again, erasing all progress. This action cannot be undone.'
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const dataStore = await getDataStore();
-      await dataStore.resetDeckScheduling($deckStore.currentDeckId);
-      await loadStats(); // Reload stats to show updated numbers
-      alert('Deck reset successfully! All cards are now "new".');
-    } catch (err: any) {
-      console.error('Failed to reset deck:', err);
-      alert(`Failed to reset deck: ${err.message}`);
-    }
+  function goToGraveyard() {
+    goto('/graveyard');
   }
 
   function goToExplore() {
@@ -162,123 +145,22 @@
         </p>
       </div>
     {:else}
-      <!-- Main Review Status - Big and Clear -->
-      <div class="review-status mb-8" style="--stat-delay: 0ms">
-        <div class="flex justify-center mb-3">
-          {#if stats.due > 0}
-            <WaterDrop size={48} animate={true} />
-          {:else}
-            <Bamboo width={32} height={48} animate={true} />
-          {/if}
-        </div>
-        <div class="text-5xl font-bold mb-2" style="color: {stats.due > 0 ? 'var(--accent-1)' : 'var(--g-good)'}">
-          {stats.due}
-        </div>
-        <div class="text-xl mb-2" style="color: var(--fg)">
-          {stats.due === 1 ? 'card' : 'cards'} ready to review
-        </div>
-        {#if stats.due === 0 && stats.learning > 0}
-          <p class="text-sm mt-2" style="color: var(--muted)">
-            You have {stats.learning} cards in learning. They'll be ready for review soon!
-          </p>
-        {:else if stats.due === 0 && stats.new > 0}
-          <p class="text-sm mt-2" style="color: var(--muted)">
-            You have {stats.new} new cards waiting. Start reviewing to learn them!
-          </p>
-        {:else if stats.due === 0 && stats.total === 0}
-          <p class="text-sm mt-2" style="color: var(--muted)">
-            No cards in this deck. Add some words to get started!
-          </p>
-        {/if}
-      </div>
+      <!-- Zen Home: Single Play Button + Minimal Stats -->
 
-      <!-- Secondary Stats - Smaller -->
-      <div class="grid grid-cols-3 gap-3 mb-8 zen-stats">
-        <div class="stat-card-small" style="border-color: var(--card-border); --stat-delay: 100ms" title="New cards you haven't studied yet">
-          <div class="flex justify-center mb-1">
-            <Seedling size={24} animate={false} />
-          </div>
-          <div class="text-2xl font-bold mb-0.5" style="color: var(--accent-1)">{stats.new}</div>
-          <div class="text-xs" style="color: var(--muted)">New</div>
-        </div>
-        <div class="stat-card-small" style="border-color: var(--card-border); --stat-delay: 150ms" title="Cards you're actively learning (interval < 21 days)">
-          <div class="flex justify-center mb-1">
-            <WaterDrop size={20} animate={false} />
-          </div>
-          <div class="text-2xl font-bold mb-0.5" style="color: var(--accent-2)">{stats.learning}</div>
-          <div class="text-xs" style="color: var(--muted)">Learning</div>
-        </div>
-        <div class="stat-card-small" style="border-color: var(--card-border); --stat-delay: 200ms" title="Difficult cards (failed 8+ times)">
-          <div class="flex justify-center mb-1">
-            <WiltedLeaf size={20} animate={false} />
-          </div>
-          <div class="text-2xl font-bold mb-0.5" style="color: var(--danger)">{stats.leeches}</div>
-          <div class="text-xs" style="color: var(--muted)">Leeches</div>
-        </div>
-      </div>
+      <!-- Big Play Deck Button -->
+      <button
+        on:click={playDeck}
+        disabled={zenStats.due === 0 && zenStats.new === 0}
+        class="zen-play-button w-full py-8 px-6 rounded-2xl font-display font-semibold text-2xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mb-4"
+        style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
+      >
+        Play Deck
+      </button>
 
-      <!-- Action Buttons -->
-      <div class="space-y-4">
-        <!-- Primary: Review Due Cards (SRS Mode) -->
-        <button
-          on:click={startReview}
-          disabled={stats.due === 0}
-          class="w-full py-6 px-6 rounded-lg font-semibold text-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          style="background: var(--accent-1); color: var(--bg); box-shadow: var(--shadow-lg)"
-        >
-          {#if stats.due > 0}
-            Review Due Cards ({stats.due})
-          {:else}
-            No Cards Due
-          {/if}
-        </button>
-
-        <!-- Secondary: Practice Modes -->
-        {#if stats.total > 0}
-          <div class="text-center mb-2 mt-6">
-            <p class="text-sm font-medium" style="color: var(--muted)">Or practice anytime:</p>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              on:click={() => startPractice('new')}
-              disabled={stats.new === 0}
-              class="py-4 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-              style="background: var(--card-bg); border: 1.5px solid var(--accent-1); color: var(--accent-1)"
-              title="Practice new cards you haven't seen yet"
-            >
-              Learn New ({stats.new})
-            </button>
-            <button
-              on:click={() => startPractice('all')}
-              class="py-4 px-4 rounded-lg font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style="background: var(--card-bg); border: 1.5px solid var(--accent-2); color: var(--accent-2)"
-              title="Practice all cards - ignore due dates and learn as much as you want"
-            >
-              Learn ({stats.total})
-            </button>
-          </div>
-
-          <!-- Reset Deck -->
-          <div class="mt-6 pt-4" style="border-top: 1px solid var(--card-border)">
-            <button
-              on:click={resetDeck}
-              class="w-full py-2 px-4 rounded-lg font-medium text-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style="background: transparent; border: 1px solid var(--danger); color: var(--danger); opacity: 0.7"
-              title="Reset all scheduling - make all cards 'new' again"
-            >
-              Reset Deck
-            </button>
-          </div>
-        {/if}
-      </div>
-
-      <!-- Total count -->
-      <div class="text-center mt-8">
-        <p class="text-sm" style="color: var(--muted)">
-          {stats.total} {stats.total === 1 ? 'word' : 'words'} in {$scopeStore.type === 'all' ? 'all decks' : 'current deck'}
-          {#if stats.retention > 0}
-            <span class="ml-2">· {stats.retention}% retention</span>
-          {/if}
+      <!-- Minimal Stats: "47 due · 12 new · 312 mastered" -->
+      <div class="text-center">
+        <p class="text-sm" style="color: var(--muted); opacity: 0.7">
+          {zenStats.due} due · {zenStats.new} new · <button on:click={goToGraveyard} class="hover:opacity-100 transition-opacity" style="color: var(--muted)">{zenStats.mastered} mastered</button>
         </p>
       </div>
     {/if}
@@ -286,57 +168,35 @@
 </div>
 
 <style>
-  /* Main Review Status - Prominent Display */
-  .review-status {
-    background: var(--card-bg);
-    border: 2px solid var(--card-border);
-    border-radius: 16px;
-    padding: 2rem 1.5rem;
-    text-align: center;
-    animation: stat-appear 0.6s ease-out backwards;
-    animation-delay: var(--stat-delay);
-    box-shadow: 0 4px 16px rgba(34, 139, 34, 0.1);
+  .zen-play-button {
+    position: relative;
+    overflow: hidden;
   }
 
-  /* Secondary Stats - Smaller Cards */
-  .stat-card-small {
-    background: var(--card-bg);
-    border: 1px solid;
-    border-radius: 8px;
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: stat-appear 0.6s ease-out backwards;
-    animation-delay: var(--stat-delay);
-    cursor: help;
+  .zen-play-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
   }
 
-  .stat-card-small:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 4px 12px rgba(34, 139, 34, 0.12);
-    border-color: var(--accent-1);
+  .zen-play-button:hover::before {
+    width: 300px;
+    height: 300px;
   }
 
-  @keyframes stat-appear {
-    0% {
-      opacity: 0;
-      transform: translateY(20px) scale(0.95);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  /* Respect user motion preferences */
   @media (prefers-reduced-motion: reduce) {
-    .review-status,
-    .stat-card-small {
-      animation: none;
+    .zen-play-button {
+      transition: none;
     }
-
-    .stat-card-small:hover {
-      transform: none;
+    .zen-play-button::before {
+      display: none;
     }
   }
 </style>
